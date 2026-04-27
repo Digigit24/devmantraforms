@@ -42,7 +42,7 @@ export default function StickyScrollSection() {
           {/* Feature image — full on mobile */}
           <div className="rounded-2xl overflow-hidden shadow-md mb-10">
             <img
-              src="/feature.png"
+              src="/feature2.png"
               alt="Fundability report"
               className="w-full h-auto object-contain block"
             />
@@ -77,7 +77,7 @@ export default function StickyScrollSection() {
               {/* ── Left: completely still ──────────────────────────── */}
               <div className="rounded-3xl overflow-hidden shadow-lg flex items-center justify-center bg-off-white/50">
                 <img
-                  src="/feature.png"
+                  src="/feature2.png"
                   alt="Fundability report in hand"
                   className="w-full h-auto max-h-[72vh] object-contain block"
                 />

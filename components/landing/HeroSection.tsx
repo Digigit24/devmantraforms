@@ -61,7 +61,7 @@ export default function HeroSection() {
               variants={fadeUp}
               transition={{ duration: 0.55, ease: 'easeOut' }}
               className="font-heading font-black text-white leading-[1.04] mb-5"
-              style={{ fontSize: 'clamp(2.6rem, 5.5vw, 4rem)', letterSpacing: '-0.03em' }}
+              style={{ fontSize: 'clamp(2.6rem, 5.5vw, 4rem)', letterSpacing: '-0.03em' } as React.CSSProperties}
             >
               Do Investors See{' '}
               <span className="relative inline-block">

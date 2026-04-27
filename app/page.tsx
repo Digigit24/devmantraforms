@@ -141,7 +141,7 @@ export default function LandingPage() {
             {/* About image */}
             <div className="w-full aspect-[4/3] rounded-2xl overflow-hidden shadow-md">
               <img
-                src="/about.png"
+                src="/about2.png"
                 alt="Dev Mantra advisory team"
                 className="w-full h-full object-cover"
               />
