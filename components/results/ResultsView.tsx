@@ -95,12 +95,12 @@ export default function ResultsView({ result }: { result: ResultRecord }) {
   const tierMeta   = TIER_META[result.tier];
   const bookingUrl = process.env.NEXT_PUBLIC_BOOKING_URL ?? '#';
   const appUrl     = process.env.NEXT_PUBLIC_APP_URL     ?? 'https://devmantra.com';
-  const [copied, setCopied] = useState(false);
+  const shareUrl = 'https://startups.devmantra.com';
+  const caption  = `Just took Dev Mantra's Fundability Index and scored ${result.finalScore}/100 — ${tierMeta.label}. Useful reality check for anyone raising in the next 12 months. Try it here: ${shareUrl}`;
 
-  const caption = `Just took Dev Mantra's Fundability Index and scored ${result.finalScore}/100 — ${tierMeta.label}. Useful reality check for anyone raising in the next 12 months — link in comments.`;
-
-  function copy() {
-    navigator.clipboard.writeText(caption).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); });
+  function shareOnLinkedIn() {
+    const url = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`;
+    window.open(url, '_blank', 'width=600,height=600,noopener,noreferrer');
   }
 
   return (
@@ -296,29 +296,23 @@ export default function ResultsView({ result }: { result: ResultRecord }) {
 
         {/* Share */}
         <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
-          <h3 className="font-heading font-bold text-navy-light text-sm mb-3">Share your result on LinkedIn</h3>
-          <div className="bg-off-white rounded-xl p-4 text-text-body text-sm leading-relaxed mb-4 border border-gray-100 italic">
+          <h3 className="font-heading font-bold text-navy-light text-sm mb-1">Share your result</h3>
+          <p className="text-text-muted text-xs mb-4">Let your network know where you stand on fundability.</p>
+
+          <div className="bg-off-white rounded-xl p-4 text-text-body text-sm leading-relaxed mb-5 border border-gray-100 italic">
             "{caption}"
           </div>
+
           <button
-            onClick={copy}
-            className="flex items-center gap-2 bg-navy-deep hover:bg-navy-mid text-white text-sm font-semibold px-5 py-2.5 rounded-lg transition-colors"
+            onClick={shareOnLinkedIn}
+            className="inline-flex items-center gap-2.5 px-6 py-3 rounded-xl font-semibold text-sm text-white transition-all hover:opacity-90 active:scale-[0.98]"
+            style={{ backgroundColor: '#0A66C2' }}
           >
-            {copied ? (
-              <>
-                <svg className="w-4 h-4 text-brand-cyan" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                </svg>
-                Copied to clipboard!
-              </>
-            ) : (
-              <>
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                </svg>
-                Copy caption
-              </>
-            )}
+            {/* LinkedIn logo */}
+            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+            </svg>
+            Share on LinkedIn
           </button>
         </div>
 

@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 // Logo import removed — using favicon inline in the progress bar
 
 import ProgressBar from './ProgressBar';
+import SubmitLoading from './SubmitLoading';
 import SingleTextQuestion from './questions/SingleTextQuestion';
 import SectorQuestion from './questions/SectorQuestion';
 import SingleSelectQuestion from './questions/SingleSelectQuestion';
@@ -16,11 +17,12 @@ import { computeScore } from '@/lib/scoring';
 import type { DiagnosticAnswers, Sector } from '@/types';
 
 interface State {
-  stepIndex:    number;
-  direction:    'forward' | 'backward';
-  answers:      Partial<DiagnosticAnswers>;
-  isSubmitting: boolean;
-  error:        string | null;
+  stepIndex:      number;
+  direction:      'forward' | 'backward';
+  answers:        Partial<DiagnosticAnswers>;
+  isSubmitting:   boolean;
+  submitComplete: boolean;
+  error:          string | null;
 }
 
 const SLIDE = {
@@ -33,11 +35,12 @@ export default function DiagnosticFlow() {
   const router = useRouter();
 
   const [state, setState] = useState<State>({
-    stepIndex:    0,
-    direction:    'forward',
-    answers:      {},
-    isSubmitting: false,
-    error:        null,
+    stepIndex:      0,
+    direction:      'forward',
+    answers:        {},
+    isSubmitting:   false,
+    submitComplete: false,
+    error:          null,
   });
 
   const sequence   = getQuestionSequence(state.answers.q3);
@@ -81,11 +84,19 @@ export default function DiagnosticFlow() {
       }
 
       const data = await res.json() as { id: string };
+
+      // Signal complete: bar jumps to 100 %, ring shows checkmark
+      setState(p => ({ ...p, submitComplete: true }));
+
+      // Brief pause so the user sees the completion state
+      await new Promise(r => setTimeout(r, 700));
+
       router.push(`/results/${data.id}`);
     } catch (err) {
       setState(p => ({
         ...p,
-        isSubmitting: false,
+        isSubmitting:   false,
+        submitComplete: false,
         error: err instanceof Error ? err.message : 'Something went wrong. Please try again.',
       }));
     }
@@ -100,6 +111,10 @@ export default function DiagnosticFlow() {
 
   return (
     <div className="min-h-screen bg-off-white flex flex-col">
+
+      {/* Loading overlay — mounts on top of everything when submitting */}
+      {state.isSubmitting && <SubmitLoading isComplete={state.submitComplete} />}
+
       <ProgressBar progress={progress} currentStep={state.stepIndex + 1} totalSteps={totalSteps} />
 
       {/* Favicon lives inside the progress bar — never overlaps content */}
