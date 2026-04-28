@@ -77,7 +77,7 @@ export default function SubmitLoading({ isComplete }: Props) {
 
       {/* Ambient glow blobs */}
       <div className="absolute top-1/3 right-1/3 w-[480px] h-[480px] rounded-full pointer-events-none"
-        style={{ background: '#00B4C8', opacity: 0.07, filter: 'blur(120px)' }} />
+        style={{ background: '#4A73C4', opacity: 0.07, filter: 'blur(120px)' }} />
       <div className="absolute bottom-1/4 left-1/4 w-80 h-80 rounded-full pointer-events-none"
         style={{ background: '#4A73C4', opacity: 0.09, filter: 'blur(90px)' }} />
 
@@ -124,7 +124,7 @@ export default function SubmitLoading({ isComplete }: Props) {
         <div className="w-full mb-8">
           <div className="flex justify-between items-center mb-1.5">
             <span className="text-white/25 text-[10px] uppercase tracking-widest">Processing</span>
-            <span className="text-brand-cyan text-xs font-bold tabular-nums">{pct}%</span>
+            <span className="text-brand-blue text-xs font-bold tabular-nums">{pct}%</span>
           </div>
 
           {/* Track */}
@@ -134,8 +134,8 @@ export default function SubmitLoading({ isComplete }: Props) {
               className="h-full rounded-full"
               style={{
                 width: `${pct}%`,
-                background: 'linear-gradient(90deg, #00B4C8, #4A73C4)',
-                boxShadow: '0 0 12px rgba(0,180,200,0.55)',
+                background: 'linear-gradient(90deg, #1b3c6b, #4a73c4)',
+                boxShadow: '0 0 12px rgba(74, 115, 196, 0.55)',
                 transition: trans,
               }}
             />
@@ -147,7 +147,7 @@ export default function SubmitLoading({ isComplete }: Props) {
               <div
                 key={mark}
                 className="w-1 h-1 rounded-full transition-all duration-500"
-                style={{ background: pct >= mark ? '#00B4C8' : 'rgba(255,255,255,0.15)' }}
+                style={{ background: pct >= mark ? '#4A73C4' : 'rgba(255,255,255,0.15)' }}
               />
             ))}
           </div>
@@ -177,13 +177,13 @@ function ScoreRingAnim({ isComplete }: { isComplete: boolean }) {
       {/* Outer pulse ring */}
       <motion.div
         className="absolute inset-0 rounded-full"
-        style={{ border: '1px solid rgba(0,180,200,0.25)' }}
+        style={{ border: '1px solid rgba(74, 115, 196, 0.25)' }}
         animate={{ scale: [1, 1.35], opacity: [0.5, 0] }}
         transition={{ duration: 2.2, repeat: Infinity, ease: 'easeOut' }}
       />
       <motion.div
         className="absolute inset-3 rounded-full"
-        style={{ border: '1px solid rgba(0,180,200,0.15)' }}
+        style={{ border: '1px solid rgba(74, 115, 196, 0.15)' }}
         animate={{ scale: [1, 1.25], opacity: [0.4, 0] }}
         transition={{ duration: 2.2, repeat: Infinity, ease: 'easeOut', delay: 0.6 }}
       />
@@ -203,8 +203,8 @@ function ScoreRingAnim({ isComplete }: { isComplete: boolean }) {
           <svg className="w-full h-full" viewBox="0 0 112 112" style={{ transform: 'rotate(-90deg)' }}>
             <defs>
               <linearGradient id="arc-g" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%"   stopColor="#00B4C8" stopOpacity="0" />
-                <stop offset="70%"  stopColor="#00B4C8" />
+                <stop offset="0%"   stopColor="#4A73C4" stopOpacity="0" />
+                <stop offset="70%"  stopColor="#4A73C4" />
                 <stop offset="100%" stopColor="#4A73C4" />
               </linearGradient>
             </defs>
@@ -228,7 +228,7 @@ function ScoreRingAnim({ isComplete }: { isComplete: boolean }) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
         >
-          <circle cx="56" cy="56" r={r} fill="none" stroke="#00B4C8" strokeWidth="5" />
+          <circle cx="56" cy="56" r={r} fill="none" stroke="#4A73C4" strokeWidth="5" />
         </motion.svg>
       )}
 
@@ -240,7 +240,7 @@ function ScoreRingAnim({ isComplete }: { isComplete: boolean }) {
             animate={{ scale: 1, opacity: 1 }}
             transition={{ type: 'spring', stiffness: 280, damping: 18, delay: 0.1 }}
           >
-            <svg className="w-8 h-8" style={{ color: '#00B4C8' }} fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+            <svg className="w-8 h-8" style={{ color: '#4A73C4' }} fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
             </svg>
           </motion.div>

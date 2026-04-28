@@ -34,7 +34,7 @@ export default function StickyScrollSection() {
       {/* ── MOBILE: image + stacked cards ────────────────────────────── */}
       <section className="block lg:hidden bg-white pt-14 pb-20 px-6">
         <div className="max-w-xl mx-auto">
-          <div className="text-brand-cyan text-xs font-bold tracking-widest uppercase mb-3">What You'll Receive</div>
+          <div className="text-brand-blue text-xs font-bold tracking-widest uppercase mb-3">What You'll Receive</div>
           <h2 className="font-heading font-black text-navy-light text-3xl mb-8" style={{ letterSpacing: '-0.02em' }}>
             A Complete Investment Report
           </h2>
@@ -53,7 +53,7 @@ export default function StickyScrollSection() {
               <div key={d.title} className="flex gap-4 p-5 bg-off-white rounded-2xl border border-gray-100">
                 <span className="text-3xl shrink-0 mt-0.5">{d.icon}</span>
                 <div>
-                  <div className="text-brand-cyan text-xs font-bold tracking-wider mb-1">{d.num}</div>
+                  <div className="text-brand-blue text-xs font-bold tracking-wider mb-1">{d.num}</div>
                   <h3 className="font-heading font-bold text-navy-light text-sm mb-1.5">{d.title}</h3>
                   <p className="text-text-muted text-sm leading-relaxed">{d.desc}</p>
                 </div>
@@ -88,7 +88,7 @@ export default function StickyScrollSection() {
 
                 {/* Static heading */}
                 <div className="shrink-0 pb-8 pt-6">
-                  <div className="text-brand-cyan text-xs font-bold tracking-widest uppercase mb-3">What You'll Receive</div>
+                  <div className="text-brand-blue text-xs font-bold tracking-widest uppercase mb-3">What You'll Receive</div>
                   <h2 className="font-heading font-black text-navy-light text-4xl" style={{ letterSpacing: '-0.02em' }}>
                     A Complete<br />Investment Report
                   </h2>
@@ -113,7 +113,7 @@ export default function StickyScrollSection() {
                     >
                       <div className="flex items-center gap-3 mb-5">
                         <span className="text-4xl">{d.icon}</span>
-                        <span className="text-brand-cyan text-xs font-bold tracking-widest">
+                        <span className="text-brand-blue text-xs font-bold tracking-widest">
                           {d.num} / {String(N).padStart(2, '0')}
                         </span>
                       </div>
@@ -133,7 +133,7 @@ export default function StickyScrollSection() {
                   {DELIVERABLES.map((_, i) => (
                     <div
                       key={i}
-                      className="h-[3px] rounded-full bg-brand-cyan transition-all duration-300"
+                      className="h-[3px] rounded-full bg-brand-blue transition-all duration-300"
                       style={{ width: i === active ? '2rem' : '0.5rem', opacity: i === active ? 1 : 0.25 }}
                     />
                   ))}

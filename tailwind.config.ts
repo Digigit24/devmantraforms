@@ -28,7 +28,8 @@ const config: Config = {
         body:    ['var(--font-inter)',  'system-ui', 'sans-serif'],
       },
       backgroundImage: {
-        'navy-gradient': 'linear-gradient(140deg, #060C18 0%, #0D1E3D 50%, #1B3C6B 100%)',
+        'navy-gradient':  'linear-gradient(140deg, #060C18 0%, #0D1E3D 50%, #1B3C6B 100%)',
+        'brand-gradient': 'linear-gradient(135deg, #1b3c6b, #4a73c4)',
       },
       keyframes: {
         fadeUp: {

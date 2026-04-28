@@ -33,14 +33,14 @@ export default function HeroSection() {
       }} />
 
       {/* Glow blobs */}
-      <div className="absolute top-1/4 right-1/3 w-[600px] h-[600px] rounded-full bg-brand-cyan opacity-[0.06] blur-[140px] pointer-events-none" />
+      <div className="absolute top-1/4 right-1/3 w-[600px] h-[600px] rounded-full bg-brand-blue opacity-[0.06] blur-[140px] pointer-events-none" />
       <div className="absolute bottom-1/4 left-0 w-[400px] h-[400px] rounded-full bg-brand-blue opacity-[0.10] blur-[100px] pointer-events-none" />
 
       {/* Nav */}
       <nav className="relative z-10 flex items-center justify-between px-6 lg:px-16 pt-8 pb-4">
         <div className="flex items-center gap-2">
-          <div className="w-6 h-px bg-brand-cyan" />
-          <span className="text-brand-cyan text-xs font-semibold tracking-widest uppercase">Fundability Index</span>
+          <div className="w-6 h-px bg-brand-blue" />
+          <span className="text-brand-blue text-xs font-semibold tracking-widest uppercase">Fundability Index</span>
         </div>
         <Logo width={150} variant="dark" />
       </nav>
@@ -53,7 +53,7 @@ export default function HeroSection() {
           <motion.div variants={stagger} initial="hidden" animate={loaded ? 'show' : 'hidden'} className="max-w-xl">
 
             <motion.div variants={fadeUp} transition={{ duration: 0.55, ease: 'easeOut' }} className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/15 rounded-full px-4 py-1.5 mb-8">
-              <span className="w-1.5 h-1.5 rounded-full bg-brand-cyan animate-pulse" />
+              <span className="w-1.5 h-1.5 rounded-full bg-brand-blue animate-pulse" />
               <span className="text-white/80 text-sm font-medium">3-minute investment readiness diagnostic</span>
             </motion.div>
 
@@ -65,8 +65,8 @@ export default function HeroSection() {
             >
               Do Investors See{' '}
               <span className="relative inline-block">
-                <span className="text-brand-cyan">Fundability</span>
-                <span className="absolute -bottom-1 left-0 right-0 h-[3px] bg-brand-cyan/40 rounded-full" />
+                <span className="text-brand-blue">Fundability</span>
+                <span className="absolute -bottom-1 left-0 right-0 h-[3px] bg-brand-blue/40 rounded-full" />
               </span>
               {' '}in You?
             </motion.h1>
@@ -97,7 +97,7 @@ export default function HeroSection() {
                 <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  className="group flex items-center gap-3 bg-brand-cyan hover:bg-brand-cyan/90 text-navy-deep font-heading font-bold text-lg px-8 py-4 rounded-2xl shadow-xl shadow-brand-cyan/20"
+                  className="group flex items-center gap-3 bg-brand-gradient hover:opacity-90 text-white font-heading font-bold text-lg px-8 py-4 rounded-2xl shadow-xl shadow-brand-blue/20"
                 >
                   Start Your Fundability Check
                   <svg className="w-5 h-5 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">

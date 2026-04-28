@@ -123,7 +123,7 @@ export default function ResultsView({ result }: { result: ResultRecord }) {
 
           {/* Nav */}
           <div className="flex items-center justify-between mb-10">
-            <div className="text-brand-cyan text-xs font-semibold tracking-widest uppercase">
+            <div className="text-brand-blue text-xs font-semibold tracking-widest uppercase">
               Fundability Index · Dev Mantra
             </div>
             <Logo width={130} variant="dark" />
@@ -266,8 +266,8 @@ export default function ResultsView({ result }: { result: ResultRecord }) {
           <div className="absolute top-0 right-0 w-64 h-64 opacity-10 blur-3xl rounded-full" style={{ backgroundColor: tierMeta.color }} />
           <div className="relative z-10">
             <div className="flex items-center gap-2 mb-3">
-              <div className="w-1.5 h-4 rounded-full bg-brand-cyan" />
-              <div className="text-brand-cyan text-xs font-semibold tracking-widest uppercase">Industry Benchmark</div>
+              <div className="w-1.5 h-4 rounded-full bg-brand-blue" />
+              <div className="text-brand-blue text-xs font-semibold tracking-widest uppercase">Industry Benchmark</div>
             </div>
             <p className="text-white/75 leading-[1.8] text-sm lg:text-base">{result.aiOutput.industry_benchmark}</p>
           </div>
@@ -275,7 +275,7 @@ export default function ResultsView({ result }: { result: ResultRecord }) {
 
         {/* CTA */}
         <div className="relative bg-navy-gradient rounded-2xl p-8 lg:p-10 overflow-hidden text-center">
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-80 h-40 opacity-[0.08] blur-3xl rounded-full bg-brand-cyan pointer-events-none" />
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-80 h-40 opacity-[0.08] blur-3xl rounded-full bg-brand-blue pointer-events-none" />
           <div className="relative z-10 max-w-lg mx-auto">
             <h2 className="font-heading font-black text-white text-2xl mb-2" style={{ letterSpacing: '-0.02em' }}>
               Ready to close the gaps?
@@ -289,7 +289,7 @@ export default function ResultsView({ result }: { result: ResultRecord }) {
               href={bookingUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2.5 bg-brand-cyan hover:bg-brand-cyan/90 text-navy-deep font-heading font-bold px-8 py-4 rounded-xl transition-all shadow-lg shadow-brand-cyan/20"
+              className="inline-flex items-center gap-2.5 bg-brand-gradient hover:opacity-90 text-white font-heading font-bold px-8 py-4 rounded-xl transition-all shadow-lg shadow-brand-blue/20"
             >
               Book Free Consultation
               <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">

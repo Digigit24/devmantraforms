@@ -69,17 +69,17 @@ export default function SectorQuestion({ question, options, value, onAnswer, onN
               onClick={() => handleSelect(opt.value)}
               className={`option-card group flex flex-col items-start gap-3 p-5 rounded-2xl border-2 text-left transition-all duration-200 ${
                 selected
-                  ? 'bg-navy-deep border-brand-cyan text-white shadow-lg shadow-navy-deep/20'
-                  : 'bg-white border-gray-200 text-navy-light hover:border-brand-cyan hover:shadow-md'
+                  ? 'bg-navy-deep border-brand-blue text-white shadow-lg shadow-navy-deep/20'
+                  : 'bg-white border-gray-200 text-navy-light hover:border-brand-blue hover:shadow-md'
               }`}
             >
-              <div className={selected ? 'text-brand-cyan' : 'text-brand-blue group-hover:text-brand-cyan transition-colors'}>
+              <div className={selected ? 'text-brand-blue' : 'text-brand-blue group-hover:text-brand-blue transition-colors'}>
                 {SECTOR_ICONS[opt.value] ?? SECTOR_ICONS.other}
               </div>
               <span className="font-semibold text-sm leading-snug">{opt.label}</span>
               {selected && (
                 <div className="ml-auto self-end">
-                  <div className="w-5 h-5 rounded-full bg-brand-cyan flex items-center justify-center">
+                  <div className="w-5 h-5 rounded-full bg-brand-blue flex items-center justify-center">
                     <svg className="w-3 h-3 text-navy-deep" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                     </svg>
@@ -96,7 +96,7 @@ export default function SectorQuestion({ question, options, value, onAnswer, onN
         {value && (
           <button
             onClick={onNext}
-            className="flex items-center gap-3 bg-navy-deep hover:bg-navy-mid text-white font-heading font-bold text-base px-7 py-3.5 rounded-xl transition-colors"
+            className="flex items-center gap-3 bg-brand-gradient hover:opacity-90 text-white font-heading font-bold text-base px-7 py-3.5 rounded-xl transition-colors"
           >
             Continue <span>→</span>
           </button>

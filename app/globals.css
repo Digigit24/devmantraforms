@@ -5,6 +5,12 @@
 :root {
   --font-onest: 'Onest', system-ui, sans-serif;
   --font-inter:  'Inter',  system-ui, sans-serif;
+
+  /* Dev Mantra brand */
+  --dm-brand-from:     #1b3c6b;
+  --dm-brand-to:       #4a73c4;
+  --dm-brand-gradient: linear-gradient(135deg, var(--dm-brand-from), var(--dm-brand-to));
+  --dm-secondary:      #4a73c4;
 }
 
 *, *::before, *::after {
@@ -35,7 +41,7 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Progress bar glow */
 .progress-glow {
-  box-shadow: 0 0 12px rgba(0, 180, 200, 0.5);
+  box-shadow: 0 0 12px rgba(74, 115, 196, 0.5);
 }
 
 /* Score counter animation */

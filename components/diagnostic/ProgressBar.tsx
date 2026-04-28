@@ -16,8 +16,8 @@ export default function ProgressBar({ progress, currentStep, totalSteps }: Props
         <motion.div
           className="h-full rounded-full"
           style={{
-            background: 'linear-gradient(90deg, #00B4C8, #4A73C4)',
-            boxShadow: '0 0 10px rgba(0,180,200,0.5)',
+            background: 'linear-gradient(90deg, #1b3c6b, #4a73c4)',
+            boxShadow: '0 0 10px rgba(74, 115, 196, 0.5)',
           }}
           initial={{ width: '0%' }}
           animate={{ width: `${progress}%` }}
@@ -34,7 +34,7 @@ export default function ProgressBar({ progress, currentStep, totalSteps }: Props
               key={i}
               className={`rounded-full transition-all duration-300 shrink-0 ${
                 i < currentStep - 1
-                  ? 'w-4 h-[3px] bg-brand-cyan'
+                  ? 'w-4 h-[3px] bg-brand-blue'
                   : i === currentStep - 1
                   ? 'w-5 h-[3px] bg-navy-deep'
                   : 'w-2 h-[3px] bg-gray-200'
@@ -49,7 +49,7 @@ export default function ProgressBar({ progress, currentStep, totalSteps }: Props
             {currentStep}<span className="text-gray-300 mx-1">/</span>{totalSteps}
           </span>
           <div className="h-3 w-px bg-gray-200" />
-          <span className="text-brand-cyan text-xs font-bold tabular-nums">{Math.round(progress)}%</span>
+          <span className="text-brand-blue text-xs font-bold tabular-nums">{Math.round(progress)}%</span>
           <div className="h-3 w-px bg-gray-200" />
           {/* Favicon — always in the bar, never floats over content */}
           <img

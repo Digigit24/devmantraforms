@@ -68,10 +68,10 @@ export default function LandingPage() {
       <section className="bg-off-white py-20 px-6 lg:px-16">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-14">
-            <div className="inline-flex items-center gap-2 text-brand-cyan text-xs font-semibold tracking-widest uppercase mb-4">
-              <div className="w-5 h-px bg-brand-cyan" />
+            <div className="inline-flex items-center gap-2 text-brand-blue text-xs font-semibold tracking-widest uppercase mb-4">
+              <div className="w-5 h-px bg-brand-blue" />
               How It Works
-              <div className="w-5 h-px bg-brand-cyan" />
+              <div className="w-5 h-px bg-brand-blue" />
             </div>
             <h2 className="font-heading font-black text-navy-light text-4xl" style={{ letterSpacing: '-0.02em' }}>
               From Question to Report in 3 Steps
@@ -84,8 +84,8 @@ export default function LandingPage() {
                 key={s.num}
                 className="bg-white rounded-2xl p-7 border border-gray-100 shadow-sm relative overflow-hidden group hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
               >
-                <div className="absolute top-0 left-0 w-1 h-full bg-brand-cyan scale-y-0 group-hover:scale-y-100 transition-transform origin-top duration-300" />
-                <div className="text-brand-cyan mb-4">{s.icon}</div>
+                <div className="absolute top-0 left-0 w-1 h-full bg-brand-blue scale-y-0 group-hover:scale-y-100 transition-transform origin-top duration-300" />
+                <div className="text-brand-blue mb-4">{s.icon}</div>
                 <div className="font-heading font-black text-5xl text-gray-100 absolute top-5 right-6">{s.num}</div>
                 <h3 className="font-heading font-bold text-navy-light text-base mb-2">{s.title}</h3>
                 <p className="text-text-muted text-sm leading-relaxed">{s.body}</p>
@@ -95,7 +95,7 @@ export default function LandingPage() {
 
           <div className="mt-10 text-center">
             <Link href="/diagnostic">
-              <button className="bg-navy-deep hover:bg-navy-mid text-white font-heading font-bold text-sm px-7 py-3.5 rounded-xl transition-colors">
+              <button className="bg-brand-gradient hover:opacity-90 text-white font-heading font-bold text-sm px-7 py-3.5 rounded-xl transition-colors">
                 Start Now - It's Free →
               </button>
             </Link>
@@ -132,7 +132,7 @@ export default function LandingPage() {
                 ))}
               </div>
               <Link href="/diagnostic">
-                <button className="bg-brand-cyan hover:bg-brand-cyan/90 text-navy-deep font-heading font-bold px-7 py-3.5 rounded-xl transition-colors text-sm">
+                <button className="bg-brand-gradient hover:opacity-90 text-white font-heading font-bold px-7 py-3.5 rounded-xl transition-colors text-sm">
                   Take the Diagnostic →
                 </button>
               </Link>
@@ -153,12 +153,12 @@ export default function LandingPage() {
 
       {/* ── FINAL CTA ────────────────────────────────────────────────── */}
       <section className="relative bg-navy-gradient overflow-hidden py-24 px-6 lg:px-16">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-brand-cyan opacity-[0.06] blur-[80px] pointer-events-none" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-brand-blue opacity-[0.06] blur-[80px] pointer-events-none" />
         <div className="relative z-10 max-w-2xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 text-brand-cyan text-xs font-semibold tracking-widest uppercase mb-6">
-            <div className="w-5 h-px bg-brand-cyan" />
+          <div className="inline-flex items-center gap-2 text-brand-blue text-xs font-semibold tracking-widest uppercase mb-6">
+            <div className="w-5 h-px bg-brand-blue" />
             Free Diagnostic
-            <div className="w-5 h-px bg-brand-cyan" />
+            <div className="w-5 h-px bg-brand-blue" />
           </div>
           <h2 className="font-heading font-black text-white text-4xl lg:text-5xl mb-4" style={{ letterSpacing: '-0.025em' }}>
             Ready to Know Where You Stand?
@@ -167,7 +167,7 @@ export default function LandingPage() {
             Your fundability score is 3 minutes away. No credit card. No fluff.
           </p>
           <Link href="/diagnostic">
-            <button className="group inline-flex items-center gap-3 bg-brand-cyan hover:bg-brand-cyan/90 text-navy-deep font-heading font-bold text-lg px-10 py-5 rounded-2xl transition-all shadow-xl shadow-brand-cyan/20">
+            <button className="group inline-flex items-center gap-3 bg-brand-gradient hover:opacity-90 text-white font-heading font-bold text-lg px-10 py-5 rounded-2xl transition-all shadow-xl shadow-brand-blue/20">
               Start Your Fundability Check
               <svg className="w-5 h-5 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />

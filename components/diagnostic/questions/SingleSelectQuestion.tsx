@@ -60,14 +60,14 @@ export default function SingleSelectQuestion({
               onClick={() => handleSelect(opt.value)}
               className={`option-card w-full flex items-center gap-4 px-5 py-4 rounded-2xl border-2 text-left transition-all duration-150 group ${
                 isSelected
-                  ? 'bg-navy-deep border-brand-cyan shadow-lg shadow-navy-deep/15'
+                  ? 'bg-navy-deep border-brand-blue shadow-lg shadow-navy-deep/15'
                   : 'bg-white border-gray-200 hover:border-navy-light hover:shadow-sm'
               }`}
             >
               {/* Option index indicator */}
               <div className={`shrink-0 w-8 h-8 rounded-lg flex items-center justify-center font-heading font-bold text-sm transition-colors ${
                 isSelected
-                  ? 'bg-brand-cyan text-navy-deep'
+                  ? 'bg-brand-blue text-navy-deep'
                   : 'bg-gray-100 text-text-muted group-hover:bg-navy-light/10 group-hover:text-navy-light'
               }`}>
                 {String.fromCharCode(65 + i)}
@@ -92,7 +92,7 @@ export default function SingleSelectQuestion({
                       key={j}
                       className={`rounded-full transition-all ${
                         j <= i
-                          ? (isSelected ? 'bg-brand-cyan w-2 h-2' : 'bg-brand-blue/30 w-1.5 h-1.5')
+                          ? (isSelected ? 'bg-brand-blue w-2 h-2' : 'bg-brand-blue/30 w-1.5 h-1.5')
                           : 'bg-gray-200 w-1.5 h-1.5'
                       }`}
                     />
@@ -101,7 +101,7 @@ export default function SingleSelectQuestion({
               )}
 
               {isSelected && (
-                <div className="shrink-0 w-5 h-5 rounded-full bg-brand-cyan flex items-center justify-center">
+                <div className="shrink-0 w-5 h-5 rounded-full bg-brand-blue flex items-center justify-center">
                   <svg className="w-3 h-3 text-navy-deep" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                   </svg>
@@ -116,7 +116,7 @@ export default function SingleSelectQuestion({
         <button
           onClick={handleNext}
           disabled={!selected}
-          className="flex items-center gap-3 bg-navy-deep hover:bg-navy-mid disabled:opacity-40 disabled:cursor-not-allowed text-white font-heading font-bold text-base px-7 py-3.5 rounded-xl transition-colors"
+          className="flex items-center gap-3 bg-brand-gradient hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed text-white font-heading font-bold text-base px-7 py-3.5 rounded-xl transition-colors"
         >
           Continue <span>→</span>
         </button>

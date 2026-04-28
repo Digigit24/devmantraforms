@@ -35,9 +35,9 @@ export default function LeadCaptureQuestion({ founderName, clientScore, onSubmit
       {/* Blurred score teaser */}
       <div className="bg-navy-deep rounded-2xl p-6 mb-8 relative overflow-hidden">
         {/* Glow */}
-        <div className="absolute top-0 right-0 w-48 h-48 bg-brand-cyan opacity-10 blur-3xl rounded-full pointer-events-none" />
+        <div className="absolute top-0 right-0 w-48 h-48 bg-brand-blue opacity-10 blur-3xl rounded-full pointer-events-none" />
 
-        <div className="text-brand-cyan text-xs font-semibold tracking-widest uppercase mb-4">
+        <div className="text-brand-blue text-xs font-semibold tracking-widest uppercase mb-4">
           Dev Mantra · Fundability Index
         </div>
 
@@ -48,7 +48,7 @@ export default function LeadCaptureQuestion({ founderName, clientScore, onSubmit
               {clientScore.finalScore}
             </div>
             <div className="absolute inset-0 flex items-center justify-center">
-              <div className="bg-brand-cyan/90 backdrop-blur-sm text-navy-deep text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5 whitespace-nowrap">
+              <div className="bg-brand-blue/90 backdrop-blur-sm text-navy-deep text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5 whitespace-nowrap">
                 <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
                 </svg>
@@ -90,7 +90,7 @@ export default function LeadCaptureQuestion({ founderName, clientScore, onSubmit
             onChange={(e) => setEmail(e.target.value)}
             placeholder="you@startup.com"
             autoComplete="email"
-            className={`w-full px-5 py-4 text-base font-body text-navy-light placeholder-gray-300 bg-white border-2 rounded-xl focus:outline-none focus:border-brand-cyan transition-colors ${
+            className={`w-full px-5 py-4 text-base font-body text-navy-light placeholder-gray-300 bg-white border-2 rounded-xl focus:outline-none focus:border-brand-blue transition-colors ${
               errors.email ? 'border-red-400' : 'border-gray-200'
             }`}
           />
@@ -106,7 +106,7 @@ export default function LeadCaptureQuestion({ founderName, clientScore, onSubmit
             onChange={(e) => setPhone(e.target.value)}
             placeholder="+91 98765 43210"
             autoComplete="tel"
-            className={`w-full px-5 py-4 text-base font-body text-navy-light placeholder-gray-300 bg-white border-2 rounded-xl focus:outline-none focus:border-brand-cyan transition-colors ${
+            className={`w-full px-5 py-4 text-base font-body text-navy-light placeholder-gray-300 bg-white border-2 rounded-xl focus:outline-none focus:border-brand-blue transition-colors ${
               errors.phone ? 'border-red-400' : 'border-gray-200'
             }`}
           />
@@ -117,7 +117,7 @@ export default function LeadCaptureQuestion({ founderName, clientScore, onSubmit
         <button
           type="submit"
           disabled={isSubmitting}
-          className="w-full flex items-center justify-center gap-3 bg-brand-cyan hover:bg-brand-cyan/90 disabled:opacity-60 text-navy-deep font-heading font-bold text-lg px-8 py-4 rounded-xl transition-all shadow-lg shadow-brand-cyan/20"
+          className="w-full flex items-center justify-center gap-3 bg-brand-gradient hover:opacity-90 disabled:opacity-60 text-navy-deep font-heading font-bold text-lg px-8 py-4 rounded-xl transition-all shadow-lg shadow-brand-blue/20"
         >
           {isSubmitting ? (
             <>

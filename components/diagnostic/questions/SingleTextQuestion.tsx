@@ -48,14 +48,14 @@ export default function SingleTextQuestion({
         onChange={(e) => setVal(e.target.value)}
         onKeyDown={(e) => e.key === 'Enter' && handleNext()}
         placeholder={placeholder}
-        className="w-full px-0 py-4 text-2xl md:text-3xl font-heading font-bold text-navy-light placeholder-gray-200 bg-transparent border-b-2 border-gray-200 focus:border-brand-cyan outline-none transition-colors mb-10"
+        className="w-full px-0 py-4 text-2xl md:text-3xl font-heading font-bold text-navy-light placeholder-gray-200 bg-transparent border-b-2 border-gray-200 focus:border-brand-blue outline-none transition-colors mb-10"
       />
 
       <div className="flex items-center gap-5">
         <button
           onClick={handleNext}
           disabled={!valid}
-          className="group flex items-center gap-2.5 bg-navy-deep hover:bg-navy-mid disabled:opacity-30 disabled:cursor-not-allowed text-white font-heading font-bold text-base px-7 py-3.5 rounded-xl transition-all"
+          className="group flex items-center gap-2.5 bg-brand-gradient hover:opacity-90 disabled:opacity-30 disabled:cursor-not-allowed text-white font-heading font-bold text-base px-7 py-3.5 rounded-xl transition-all"
         >
           Continue
           <svg className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
