@@ -1,9 +1,18 @@
+import nodemailer from 'nodemailer';
 import type { AIOutput, DimensionScores, TierValue } from '@/types';
 import { TIER_META, DIMENSION_META } from '@/types';
 
-// Uses Brevo REST API (HTTPS port 443) — works on all serverless platforms.
-// nodemailer SMTP is blocked on AWS Lambda / Netlify (SMTP ports are firewalled).
-// BREVO_SMTP_PASS is also the Brevo API key — same value, no new credentials needed.
+function getTransporter() {
+  return nodemailer.createTransport({
+    host:   process.env.BREVO_SMTP_HOST ?? 'smtp-relay.brevo.com',
+    port:   parseInt(process.env.BREVO_SMTP_PORT ?? '587'),
+    secure: false,
+    auth: {
+      user: process.env.BREVO_SMTP_USER,
+      pass: process.env.BREVO_SMTP_PASS,
+    },
+  });
+}
 
 interface EmailInput {
   to:              string;
@@ -17,9 +26,6 @@ interface EmailInput {
 }
 
 export async function sendReportEmail(input: EmailInput) {
-  const apiKey = process.env.BREVO_SMTP_PASS ?? process.env.BREVO_API_KEY;
-  if (!apiKey) throw new Error('Brevo API key not set (BREVO_SMTP_PASS)');
-
   const { to, founderName, companyName, finalScore, tier, dimensionScores, aiOutput, pdfBuffer } = input;
   const tierMeta   = TIER_META[tier];
   const bookingUrl = process.env.NEXT_PUBLIC_BOOKING_URL ?? 'https://devmantra.com';
@@ -109,37 +115,20 @@ export async function sendReportEmail(input: EmailInput) {
 </body>
 </html>`;
 
-  const body: Record<string, unknown> = {
-    sender: {
-      name:  process.env.BREVO_FROM_NAME  ?? 'Dev Mantra',
-      email: process.env.BREVO_FROM_EMAIL ?? 'info@devmantra.com',
-    },
-    to:      [{ email: to, name: founderName }],
-    replyTo: { email: process.env.BREVO_REPLY_TO ?? 'advisory@devmantra.com' },
+  const transporter = getTransporter();
+
+  await transporter.sendMail({
+    from:    `"${process.env.BREVO_FROM_NAME ?? 'Dev Mantra'}" <${process.env.BREVO_FROM_EMAIL ?? process.env.BREVO_SMTP_USER}>`,
+    replyTo: process.env.BREVO_REPLY_TO,
+    to,
     subject: `Your Fundability Score is ${finalScore}/100 — ${tierMeta.label}`,
-    htmlContent: html,
-  };
-
-  // Attach PDF only if it was generated successfully
-  if (pdfBuffer.length > 0) {
-    body.attachment = [{
-      content: Buffer.from(pdfBuffer).toString('base64'),
-      name:    `${companyName.replace(/\s+/g, '-')}-Fundability-Report.pdf`,
-    }];
-  }
-
-  const res = await fetch('https://api.brevo.com/v3/smtp/email', {
-    method:  'POST',
-    headers: {
-      'accept':       'application/json',
-      'api-key':      apiKey,
-      'content-type': 'application/json',
-    },
-    body: JSON.stringify(body),
+    html,
+    attachments: pdfBuffer.length > 0
+      ? [{
+          filename:    `${companyName.replace(/\s+/g, '-')}-Fundability-Report.pdf`,
+          content:     Buffer.from(pdfBuffer),
+          contentType: 'application/pdf',
+        }]
+      : [],
   });
-
-  if (!res.ok) {
-    const detail = await res.json().catch(() => ({}));
-    throw new Error(`Brevo API ${res.status}: ${JSON.stringify(detail)}`);
-  }
 }
