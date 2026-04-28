@@ -11,7 +11,7 @@ export async function generateMetadata({ params }: Props) {
   const result = await getResultById(id);
   if (!result) return { title: 'Result Not Found' };
   return {
-    title: `${result.companyName} — ${result.finalScore}/100 Fundability Score`,
+    title: `${result.companyName} - ${result.finalScore}/100 Fundability Score`,
     description: `${result.founderName}'s fundability report from Dev Mantra.`,
   };
 }

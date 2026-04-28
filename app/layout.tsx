@@ -17,11 +17,11 @@ const onest = Onest({
 });
 
 export const metadata: Metadata = {
-  title: 'Fundability Index — Dev Mantra',
+  title: 'Fundability Index - Dev Mantra',
   description:
     'Answer 12 focused questions. Get an AI-powered fundability score, tier classification, and a personalized 3-step action plan from Dev Mantra\'s advisory team.',
   openGraph: {
-    title: 'Fundability Index — Are You Investor-Ready?',
+    title: 'Fundability Index - Are You Investor-Ready?',
     description: '3 minutes. 12 questions. Instant AI report.',
     siteName: 'Dev Mantra',
   },

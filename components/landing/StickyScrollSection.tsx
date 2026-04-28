@@ -4,11 +4,11 @@ import { useRef, useState } from 'react';
 import { useScroll, useMotionValueEvent } from 'framer-motion';
 
 const DELIVERABLES = [
-  { icon: '📊', num: '01', title: 'Fundability Score (0–100)',   desc: 'A deterministic number computed across 6 weighted investment dimensions — Management Team, Market, Moat, Channels, Stage, and Funding Ask. Not an estimate. Not AI-generated. A structured, repeatable calculation.' },
-  { icon: '🏅', num: '02', title: 'Tier Classification',          desc: 'Idea Stage, Seed-Ready with Gaps, Series A Fundable, or Top-Decile Founder — each with a score range and a plain-English explanation of what it means for your next capital raise.' },
-  { icon: '🧠', num: '03', title: 'AI Executive Verdict',         desc: '2–3 paragraphs of personalised, advisory-grade analysis — not generic templates. References your specific answers and the weakest dimensions in your profile.' },
+  { icon: '📊', num: '01', title: 'Fundability Score (0-100)',   desc: 'A deterministic number computed across 6 weighted investment dimensions - Management Team, Market, Moat, Channels, Stage, and Funding Ask. Not an estimate. Not AI-generated. A structured, repeatable calculation.' },
+  { icon: '🏅', num: '02', title: 'Tier Classification',          desc: 'Idea Stage, Seed-Ready with Gaps, Series A Fundable, or Top-Decile Founder - each with a score range and a plain-English explanation of what it means for your next capital raise.' },
+  { icon: '🧠', num: '03', title: 'AI Executive Verdict',         desc: '2-3 paragraphs of personalised, advisory-grade analysis - not generic templates. References your specific answers and the weakest dimensions in your profile.' },
   { icon: '⚡', num: '04', title: '3-Point Action Plan',          desc: 'Three prioritised, specific actions to close your biggest gaps in the next 90 days. At least one references a relevant Dev Mantra service area. Written for founders, not consultants.' },
-  { icon: '📈', num: '05', title: 'Industry Benchmark',           desc: "How your score compares against real Indian startup fundraising outcomes — grounded in Dev Mantra's portfolio of 500+ companies across sectors and stages." },
+  { icon: '📈', num: '05', title: 'Industry Benchmark',           desc: "How your score compares against real Indian startup fundraising outcomes - grounded in Dev Mantra's portfolio of 500+ companies across sectors and stages." },
   { icon: '📄', num: '06', title: 'Branded PDF Report',           desc: 'A 3-page, professionally formatted PDF emailed to you within seconds of completing the diagnostic. Shareable with co-founders, board members, and advisors.' },
 ];
 
@@ -23,7 +23,7 @@ export default function StickyScrollSection() {
 
   const [active, setActive] = useState(0);
 
-  // Derive active index purely from scroll progress — clean, no overlap
+  // Derive active index purely from scroll progress - clean, no overlap
   useMotionValueEvent(scrollYProgress, 'change', (v) => {
     const idx = Math.min(Math.floor(v * N), N - 1);
     setActive(idx);
@@ -39,7 +39,7 @@ export default function StickyScrollSection() {
             A Complete Investment Report
           </h2>
 
-          {/* Feature image — full on mobile */}
+          {/* Feature image - full on mobile */}
           <div className="rounded-2xl overflow-hidden shadow-md mb-10">
             <img
               src="/feature.png"
@@ -94,7 +94,7 @@ export default function StickyScrollSection() {
                   </h2>
                 </div>
 
-                {/* Feature area — overflow hidden so only one slot visible */}
+                {/* Feature area - overflow hidden so only one slot visible */}
                 <div className="flex-1 relative overflow-hidden">
                   {DELIVERABLES.map((d, i) => (
                     <div

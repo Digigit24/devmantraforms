@@ -27,7 +27,7 @@ const STEPS = [
   {
     num: '03',
     title: 'Get Your Report Instantly',
-    body:  'Score, tier, executive verdict, and a 3-point action plan — emailed as a branded PDF within seconds of completing the diagnostic.',
+    body:  'Score, tier, executive verdict, and a 3-point action plan - emailed as a branded PDF within seconds of completing the diagnostic.',
     icon: (
       <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
@@ -96,7 +96,7 @@ export default function LandingPage() {
           <div className="mt-10 text-center">
             <Link href="/diagnostic">
               <button className="bg-navy-deep hover:bg-navy-mid text-white font-heading font-bold text-sm px-7 py-3.5 rounded-xl transition-colors">
-                Start Now — It's Free →
+                Start Now - It's Free →
               </button>
             </Link>
           </div>
@@ -113,7 +113,7 @@ export default function LandingPage() {
 
             {/* Text */}
             <div>
-              {/* Logo on light bg — no wrapper needed */}
+              {/* Logo on light bg - no wrapper needed */}
               <Logo width={160} variant="light" className="mb-8" />
               <h2 className="font-heading font-black text-navy-light text-3xl mb-4" style={{ letterSpacing: '-0.02em' }}>
                 20+ Years Helping Founders Raise Capital
@@ -121,7 +121,7 @@ export default function LandingPage() {
               <p className="text-text-body leading-relaxed mb-6">
                 Dev Mantra Financial Services and N. Tatia &amp; Associates have advised 500+ Indian startups
                 across funding rounds, M&amp;A transactions, IPO readiness, and compliance. We built this
-                diagnostic to give founders a clear, honest picture of where they stand — before they
+                diagnostic to give founders a clear, honest picture of where they stand - before they
                 walk into an investor meeting.
               </p>
               <div className="flex flex-wrap gap-2 mb-8">

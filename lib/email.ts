@@ -121,7 +121,7 @@ export async function sendReportEmail(input: EmailInput) {
     from:    `"${process.env.BREVO_FROM_NAME ?? 'Dev Mantra'}" <${process.env.BREVO_FROM_EMAIL ?? process.env.BREVO_SMTP_USER}>`,
     replyTo: process.env.BREVO_REPLY_TO,
     to,
-    subject: `Your Fundability Score is ${finalScore}/100 — ${tierMeta.label}`,
+    subject: `Your Fundability Score is ${finalScore}/100 - ${tierMeta.label}`,
     html,
     attachments: pdfBuffer.length > 0
       ? [{
