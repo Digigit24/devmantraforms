@@ -96,11 +96,16 @@ export default function ResultsView({ result }: { result: ResultRecord }) {
   const bookingUrl = process.env.NEXT_PUBLIC_BOOKING_URL ?? '#';
   const appUrl     = process.env.NEXT_PUBLIC_APP_URL     ?? 'https://devmantra.com';
   const shareUrl = 'https://startups.devmantra.com';
-  const caption  = `Just took Dev Mantra's Fundability Index and scored ${result.finalScore}/100 — ${tierMeta.label}. Useful reality check for anyone raising in the next 12 months. Try it here: ${shareUrl}`;
+  const caption  = `Just took Dev Mantra's Fundability Index and scored ${result.finalScore}/100 - ${tierMeta.label}. Useful reality check for anyone raising in the next 12 months. Try it here: ${shareUrl}`;
+  const [copied, setCopied] = useState(false);
 
   function shareOnLinkedIn() {
+    // Copy caption first so user can paste into the LinkedIn post editor
+    navigator.clipboard.writeText(caption).catch(() => {});
+    setCopied(true);
+    setTimeout(() => setCopied(false), 4000);
     const url = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`;
-    window.open(url, '_blank', 'width=600,height=600,noopener,noreferrer');
+    window.open(url, '_blank', 'width=620,height=620,noopener,noreferrer');
   }
 
   return (
@@ -276,8 +281,9 @@ export default function ResultsView({ result }: { result: ResultRecord }) {
               Ready to close the gaps?
             </h2>
             <p className="text-white/55 text-sm mb-6">
-              Book a free 30-minute strategy call. Dev Mantra has helped move{' '}
-              <span className="text-white font-semibold">500+ founders</span> to the next funding tier.
+              Dev Mantra has advised{' '}
+              <span className="text-white font-semibold">500+ founders</span>{' '}
+              on strategic growth, transactions, and business transformation.
             </p>
             <a
               href={bookingUrl}
@@ -303,29 +309,80 @@ export default function ResultsView({ result }: { result: ResultRecord }) {
             "{caption}"
           </div>
 
-          <button
-            onClick={shareOnLinkedIn}
-            className="inline-flex items-center gap-2.5 px-6 py-3 rounded-xl font-semibold text-sm text-white transition-all hover:opacity-90 active:scale-[0.98]"
-            style={{ backgroundColor: '#0A66C2' }}
-          >
-            {/* LinkedIn logo */}
-            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
-            </svg>
-            Share on LinkedIn
-          </button>
+          <div className="flex items-center gap-3 flex-wrap">
+            {/* LinkedIn share — also copies caption automatically */}
+            <button
+              onClick={shareOnLinkedIn}
+              className="inline-flex items-center gap-2.5 px-5 py-2.5 rounded-xl font-semibold text-sm text-white transition-all hover:opacity-90 active:scale-[0.98]"
+              style={{ backgroundColor: '#0A66C2' }}
+            >
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+              </svg>
+              Share on LinkedIn
+            </button>
+
+            {/* Feedback pill shown after clicking */}
+            {copied && (
+              <span className="text-xs text-green-700 bg-green-50 border border-green-200 px-3 py-1.5 rounded-full flex items-center gap-1.5 animate-fade-up">
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+                Caption copied - paste it into your post
+              </span>
+            )}
+          </div>
         </div>
 
       </div>
 
       {/* Footer */}
-      <footer className="bg-navy-deep mt-6 py-8 px-6 border-t border-white/5">
-        <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <Logo width={110} variant="dark" />
-          <p className="text-white/25 text-xs text-center">
-            Prepared by Dev Mantra Financial Services · N. Tatia &amp; Associates · ₹5,000 Cr+ in transactions
-          </p>
-          <a href={appUrl} className="text-white/35 hover:text-white/60 text-xs transition-colors">devmantra.com</a>
+      <footer className="bg-navy-deep mt-6 pt-10 pb-8 px-6 border-t border-white/5">
+        <div className="max-w-5xl mx-auto">
+
+          {/* Top row */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-8 pb-8 border-b border-white/10">
+            <div className="lg:col-span-1">
+              <Logo width={110} variant="dark" className="mb-3" />
+              <p className="text-white/35 text-xs leading-relaxed">
+                Dev Mantra Financial Services<br />N. Tatia &amp; Associates
+              </p>
+            </div>
+
+            <div>
+              <div className="text-white/25 text-[10px] uppercase tracking-widest mb-2">Call Us</div>
+              <a href="tel:+918042061247" className="text-white/60 hover:text-white text-sm transition-colors">
+                +91-80-4206-1247
+              </a>
+            </div>
+
+            <div>
+              <div className="text-white/25 text-[10px] uppercase tracking-widest mb-2">Email</div>
+              <a href="mailto:info@devmantra.com" className="text-white/60 hover:text-white text-sm transition-colors">
+                info@devmantra.com
+              </a>
+            </div>
+
+            <div>
+              <div className="text-white/25 text-[10px] uppercase tracking-widest mb-2">Head Office</div>
+              <p className="text-white/50 text-xs leading-relaxed">
+                No.85/1, 2nd Floor, 10th Cross<br />
+                CBI Road, Ganganagar<br />
+                Bengaluru - 560024
+              </p>
+            </div>
+          </div>
+
+          {/* Bottom row */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+            <p className="text-white/20 text-xs text-center sm:text-left">
+              © {new Date().getFullYear()} Dev Mantra Financial Services · ₹5,000 Cr+ in transactions · 20+ years of advisory
+            </p>
+            <a href={appUrl} className="text-white/30 hover:text-white/60 text-xs transition-colors">
+              devmantra.com
+            </a>
+          </div>
+
         </div>
       </footer>
 

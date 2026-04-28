@@ -144,14 +144,24 @@ Return ONLY valid JSON (no markdown fences) matching this exact shape:
     if (!parsed.executive_verdict || !parsed.top_3_actions || !parsed.industry_benchmark)
       throw new Error('Incomplete AI response');
 
-    return parsed;
+    return sanitizeOutput(parsed);
   } catch (err) {
     console.error(`[AI] ${process.env.AI_PROVIDER ?? 'mistral'} call failed:`, err);
     const fb = FALLBACK[tier];
-    return {
+    return sanitizeOutput({
       executive_verdict:  fb.executive_verdict.replace(/{name}/g, founderName).replace(/{company}/g, companyName),
       top_3_actions:      fb.top_3_actions,
       industry_benchmark: fb.industry_benchmark,
-    };
+    });
   }
+}
+
+// Replace em dash (—) and en dash (–) with a plain keyboard hyphen (-)
+function sanitizeOutput(output: AIOutput): AIOutput {
+  const clean = (s: string) => s.replace(/—|–/g, '-');
+  return {
+    executive_verdict:  clean(output.executive_verdict),
+    top_3_actions:      output.top_3_actions.map(a => ({ title: clean(a.title), body: clean(a.body) })),
+    industry_benchmark: clean(output.industry_benchmark),
+  };
 }

@@ -179,15 +179,54 @@ export default function LandingPage() {
       </section>
 
       {/* ── FOOTER ───────────────────────────────────────────────────── */}
-      <footer className="bg-navy-deep border-t border-white/5 py-8 px-6 lg:px-16">
-        <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <Logo width={110} variant="dark" />
-          <p className="text-white/25 text-xs text-center">
-            © {new Date().getFullYear()} Dev Mantra Financial Services · N. Tatia &amp; Associates
-          </p>
-          <a href="https://devmantra.com" className="text-white/30 hover:text-white/60 text-xs transition-colors">
-            devmantra.com
-          </a>
+      <footer className="bg-navy-deep border-t border-white/5 pt-12 pb-8 px-6 lg:px-16">
+        <div className="max-w-5xl mx-auto">
+
+          {/* Contact grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 pb-10 border-b border-white/10 mb-8">
+
+            <div className="lg:col-span-1">
+              <Logo width={120} variant="dark" className="mb-3" />
+              <p className="text-white/35 text-xs leading-relaxed">
+                Dev Mantra Financial Services<br />N. Tatia &amp; Associates
+              </p>
+            </div>
+
+            <div>
+              <div className="text-white/25 text-[10px] uppercase tracking-widest mb-2">Call Us</div>
+              <a href="tel:+918042061247" className="text-white/60 hover:text-white text-sm transition-colors">
+                +91-80-4206-1247
+              </a>
+            </div>
+
+            <div>
+              <div className="text-white/25 text-[10px] uppercase tracking-widest mb-2">Email</div>
+              <a href="mailto:info@devmantra.com" className="text-white/60 hover:text-white text-sm transition-colors">
+                info@devmantra.com
+              </a>
+            </div>
+
+            <div>
+              <div className="text-white/25 text-[10px] uppercase tracking-widest mb-2">Head Office</div>
+              <p className="text-white/50 text-xs leading-relaxed">
+                No.85/1, 2nd Floor, 10th Cross<br />
+                CBI Road, Ganganagar<br />
+                Bengaluru - 560024
+              </p>
+            </div>
+
+          </div>
+
+          {/* Bottom bar */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+            <p className="text-white/20 text-xs text-center sm:text-left">
+              © {new Date().getFullYear()} Dev Mantra Financial Services · N. Tatia &amp; Associates
+            </p>
+            <a href="https://devmantra.com" className="text-white/30 hover:text-white/60 text-xs transition-colors">
+              devmantra.com
+            </a>
+          </div>
+
         </div>
       </footer>
 
