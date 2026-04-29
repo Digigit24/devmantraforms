@@ -1,20 +1,13 @@
-import nodemailer from 'nodemailer';
+import { Agent, fetch as undiciFetch } from 'undici';
 import type { AIOutput, DimensionScores, TierValue } from '@/types';
 import { TIER_META, DIMENSION_META } from '@/types';
 
-function getTransporter() {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return nodemailer.createTransport({
-    host:   process.env.BREVO_SMTP_HOST ?? 'smtp-relay.brevo.com',
-    port:   parseInt(process.env.BREVO_SMTP_PORT ?? '587'),
-    secure: false,
-    family: 4,  // VPS has broken IPv6; force IPv4 to reach Brevo correctly
-    auth: {
-      user: process.env.BREVO_SMTP_USER,
-      pass: process.env.BREVO_SMTP_PASS,
-    },
-  } as any);
-}
+// Force IPv4 — VPS has broken IPv6 routing
+const ipv4Fetch = (url: string, init: Record<string, unknown>) =>
+  undiciFetch(url as Parameters<typeof undiciFetch>[0], {
+    ...(init as Parameters<typeof undiciFetch>[1]),
+    dispatcher: new Agent({ connect: { family: 4 } }),
+  });
 
 interface EmailInput {
   to:              string;
@@ -117,20 +110,29 @@ export async function sendReportEmail(input: EmailInput) {
 </body>
 </html>`;
 
-  const transporter = getTransporter();
+  const attachment = pdfBuffer.length > 0
+    ? [{ name: `${companyName.replace(/\s+/g, '-')}-Fundability-Report.pdf`, content: Buffer.from(pdfBuffer).toString('base64') }]
+    : [];
 
-  await transporter.sendMail({
-    from:    `"${process.env.BREVO_FROM_NAME ?? 'Dev Mantra'}" <${process.env.BREVO_FROM_EMAIL ?? process.env.BREVO_SMTP_USER}>`,
-    replyTo: process.env.BREVO_REPLY_TO,
-    to,
-    subject: `Your Fundability Score is ${finalScore}/100 - ${tierMeta.label}`,
-    html,
-    attachments: pdfBuffer.length > 0
-      ? [{
-          filename:    `${companyName.replace(/\s+/g, '-')}-Fundability-Report.pdf`,
-          content:     Buffer.from(pdfBuffer),
-          contentType: 'application/pdf',
-        }]
-      : [],
+  const res = await ipv4Fetch('https://api.brevo.com/v3/smtp/email', {
+    method: 'POST',
+    headers: {
+      'accept':       'application/json',
+      'api-key':      process.env.BREVO_API_KEY ?? '',
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify({
+      sender:      { name: process.env.BREVO_FROM_NAME ?? 'Dev Mantra', email: process.env.BREVO_FROM_EMAIL },
+      replyTo:     process.env.BREVO_REPLY_TO ? { email: process.env.BREVO_REPLY_TO } : undefined,
+      to:          [{ email: to }],
+      subject:     `Your Fundability Score is ${finalScore}/100 - ${tierMeta.label}`,
+      htmlContent: html,
+      attachment,
+    }),
   });
+
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`Brevo API ${res.status}: ${body}`);
+  }
 }
