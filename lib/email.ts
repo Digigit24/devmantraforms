@@ -3,6 +3,7 @@ import type { AIOutput, DimensionScores, TierValue } from '@/types';
 import { TIER_META, DIMENSION_META } from '@/types';
 
 function getTransporter() {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return nodemailer.createTransport({
     host:   process.env.BREVO_SMTP_HOST ?? 'smtp-relay.brevo.com',
     port:   parseInt(process.env.BREVO_SMTP_PORT ?? '587'),
@@ -12,7 +13,7 @@ function getTransporter() {
       user: process.env.BREVO_SMTP_USER,
       pass: process.env.BREVO_SMTP_PASS,
     },
-  });
+  } as any);
 }
 
 interface EmailInput {
