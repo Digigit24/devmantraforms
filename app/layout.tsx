@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Inter, Onest } from 'next/font/google';
 import Script from 'next/script';
+import MetaPixelPageView from '@/components/analytics/MetaPixelPageView';
 import './globals.css';
 
 const META_PIXEL_ID = '1298473208904876';
@@ -43,8 +44,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           t.src=v;s=b.getElementsByTagName(e)[0];
           s.parentNode.insertBefore(t,s)}(window, document,'script',
           'https://connect.facebook.net/en_US/fbevents.js');
-          fbq('init', '${META_PIXEL_ID}');
-          fbq('track', 'PageView');`}
+          fbq('init', '${META_PIXEL_ID}');`}
         </Script>
       </head>
       <body>
@@ -57,6 +57,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             alt=""
           />
         </noscript>
+        <MetaPixelPageView />
         {children}
       </body>
     </html>
