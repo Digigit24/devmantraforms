@@ -23,7 +23,7 @@ export default async function ResultsPage({ params }: Props) {
   if (!result) notFound();
   return (
     <>
-      <MetaPixelLead dedupeKey={id} />
+      <MetaPixelLead id={id} />
       <ResultsView result={result} />
     </>
   );
