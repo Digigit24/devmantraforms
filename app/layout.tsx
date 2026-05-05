@@ -34,7 +34,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${inter.variable} ${onest.variable}`}>
-      <head>
+      <body>
         <Script id="meta-pixel" strategy="afterInteractive">
           {`!function(f,b,e,v,n,t,s)
           {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
@@ -46,8 +46,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           'https://connect.facebook.net/en_US/fbevents.js');
           fbq('init', '${META_PIXEL_ID}');`}
         </Script>
-      </head>
-      <body>
         <noscript>
           <img
             height="1"
