@@ -36,7 +36,7 @@ export default function MetaPixelInit() {
     script.src = FBEVENTS_SRC;
     document.head.appendChild(script);
 
-    window.fbq('init', META_PIXEL_ID);
+    window.fbq?.('init', META_PIXEL_ID);
   }, []);
 
   return null;
