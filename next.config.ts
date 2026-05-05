@@ -1,9 +1,11 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
-  output: 'standalone',   // Required for cPanel / Node.js server deployment
+  output: 'standalone',
   serverExternalPackages: ['undici'],
+
   images: {
+    unoptimized: true,   // 🔥 THIS IS THE FIX
     domains: [],
   },
 };
