@@ -63,7 +63,7 @@ export const metadata: Metadata = {
     locale: 'en_IN',
     images: [
       {
-        url: '/india_vs_europe_calculator.png',
+        url: '/fundability_index.png',
         width: 1734,
         height: 907,
         alt: 'India vs Europe Startup Funding Calculator - Dev Mantra',
@@ -75,7 +75,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Fundability Index - Are You Investor-Ready?',
     description: '3 minutes. 12 questions. Instant AI report. Know your fundability score before you pitch.',
-    images: ['/india_vs_europe_calculator.png'],
+    images: ['/fundability_index.png'],
     creator: '@devmantra',
     site: '@devmantra',
   },

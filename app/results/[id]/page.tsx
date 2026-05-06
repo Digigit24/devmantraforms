@@ -21,7 +21,7 @@ export async function generateMetadata({ params }: Props) {
       description,
       images: [
         {
-          url: '/india_vs_europe_calculator.png',
+          url: '/fundability_index.png',
           width: 1734,
           height: 907,
           alt: 'Dev Mantra Fundability Report',
@@ -32,7 +32,7 @@ export async function generateMetadata({ params }: Props) {
       card: 'summary_large_image',
       title,
       description,
-      images: ['/india_vs_europe_calculator.png'],
+      images: ['/fundability_index.png'],
     },
     robots: {
       index: false,
