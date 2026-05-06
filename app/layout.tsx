@@ -1,6 +1,10 @@
 import type { Metadata } from 'next';
 import { Inter, Onest } from 'next/font/google';
+import MetaPixelInit from '@/components/analytics/MetaPixelInit';
+import MetaPixelPageView from '@/components/analytics/MetaPixelPageView';
 import './globals.css';
+
+const META_PIXEL_ID = '1298473208904876';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -87,7 +91,22 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="theme-color" content="#0B1829" />
         <link rel="icon" href="/favicon.ico" />
       </head>
-      <body>{children}</body>
+      <body>
+        <MetaPixelInit />
+        <MetaPixelPageView />
+
+        <noscript>
+          <img
+            height="1"
+            width="1"
+            style={{ display: 'none' }}
+            src={`https://www.facebook.com/tr?id=${META_PIXEL_ID}&ev=PageView&noscript=1`}
+            alt=""
+          />
+        </noscript>
+
+        {children}
+      </body>
     </html>
   );
 }
