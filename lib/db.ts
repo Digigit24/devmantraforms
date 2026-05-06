@@ -4,7 +4,9 @@ import type { AIOutput, DiagnosticAnswers, DimensionScores, ResultRecord, Scorin
 
 // undici (Node.js native fetch) bypasses dns.lookup() so --dns-result-order has no effect.
 // Force IPv4 explicitly — VPS has broken IPv6 routing.
-const ipv4Connector = buildConnector({ family: 4 });
+// `port: 0` is a placeholder required by undici's types; the real port is filled
+// per-request from the URL inside buildConnector, so this value is never used.
+const ipv4Connector = buildConnector({ family: 4, port: 0 });
 
 neonConfig.fetchFunction = (url: string, opts: unknown) =>
   undiciFetch(url as Parameters<typeof undiciFetch>[0], {

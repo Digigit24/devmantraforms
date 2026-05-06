@@ -2,8 +2,10 @@ import type { AIOutput, DimensionScores, TierValue } from '@/types';
 import { Agent, buildConnector, fetch as undiciFetch } from 'undici';
 import { TIER_META, DIMENSION_META } from '@/types';
 
-// Force IPv4 — VPS has broken IPv6 routing
-const ipv4Connector = buildConnector({ family: 4 });
+// Force IPv4 — VPS has broken IPv6 routing.
+// `port: 0` is a placeholder required by undici's types; the real port is filled
+// per-request from the URL inside buildConnector, so this value is never used.
+const ipv4Connector = buildConnector({ family: 4, port: 0 });
 
 const ipv4Fetch = (url: string, init: Record<string, unknown>) =>
   undiciFetch(url as Parameters<typeof undiciFetch>[0], {
