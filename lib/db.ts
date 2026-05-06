@@ -1,4 +1,5 @@
 import { neon, neonConfig } from '@neondatabase/serverless';
+import { Agent, fetch as undiciFetch } from 'undici';
 import type { AIOutput, DiagnosticAnswers, DimensionScores, ResultRecord, ScoringResult, TierValue } from '@/types';
 
 // undici (Node.js native fetch) bypasses dns.lookup() so --dns-result-order has no effect.

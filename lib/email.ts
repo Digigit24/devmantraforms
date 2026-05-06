@@ -1,4 +1,5 @@
 import type { AIOutput, DimensionScores, TierValue } from '@/types';
+import { Agent, fetch as undiciFetch } from 'undici';
 import { TIER_META, DIMENSION_META } from '@/types';
 
 // Force IPv4 — VPS has broken IPv6 routing
