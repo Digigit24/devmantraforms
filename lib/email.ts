@@ -1,4 +1,3 @@
-import { Agent, fetch as undiciFetch } from 'undici';
 import type { AIOutput, DimensionScores, TierValue } from '@/types';
 import { TIER_META, DIMENSION_META } from '@/types';
 
