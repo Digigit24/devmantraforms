@@ -10,6 +10,7 @@ import type {
 } from './types';
 import type { FormSchemaDefinition } from './schema';
 import type { AgenticFormsRepository } from './repository';
+import { createSqliteRepository, type SqliteRepositoryHandle } from './sqlite-repository';
 
 interface StoreState {
   forms: Map<string, FormRecord>;
@@ -23,6 +24,8 @@ interface StoreState {
 declare global {
   // eslint-disable-next-line no-var
   var __agenticFormsStore: StoreState | undefined;
+  // eslint-disable-next-line no-var
+  var __agenticFormsSqliteRepository: SqliteRepositoryHandle | undefined;
 }
 
 const sampleHiringForm: FormSchemaDefinition = {
@@ -185,7 +188,21 @@ function createInMemoryRepository(state: StoreState): AgenticFormsRepository {
   };
 }
 
+// Production selection: a configured CELIYO_DATABASE_PATH means every restart keeps its
+// data; leaving it unset preserves today's in-memory behavior exactly, which is what the
+// existing test suite and local `next dev` continue to get unless someone explicitly opts
+// in. The SQLite handle is cached on globalThis (like __agenticFormsStore) so Next.js dev
+// hot-reload doesn't reopen the database file on every edit.
+function getSqliteRepository(databasePath: string): AgenticFormsRepository {
+  globalThis.__agenticFormsSqliteRepository ??= createSqliteRepository(databasePath, { seed: true });
+  return globalThis.__agenticFormsSqliteRepository;
+}
+
 export function getRepository(): AgenticFormsRepository {
+  const databasePath = process.env.CELIYO_DATABASE_PATH;
+  if (databasePath) {
+    return getSqliteRepository(databasePath);
+  }
   return createInMemoryRepository(getStore());
 }
 
