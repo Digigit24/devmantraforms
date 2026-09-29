@@ -32,6 +32,18 @@ export function getTenantBySlug(slug: string): TenantRecord {
   return tenant;
 }
 
+// Shared tenant-selection rule for the human admin UI/API (not MCP, which always resolves
+// tenant from the authenticated API key). Explicit slug wins; otherwise falls back to the
+// first tenant, matching today's implicit single-tenant behavior for the common case.
+// Centralized here so /dashboard, /forms, /responses/*, and their API routes all resolve
+// "the current admin tenant" the exact same way instead of duplicating the rule.
+export function resolveAdminTenant(slug?: string | null): TenantRecord {
+  if (slug) return getTenantBySlug(slug);
+  const [first] = listTenants();
+  if (!first) throw publicError('NOT_FOUND', 'No tenant exists yet.', 404);
+  return first;
+}
+
 export function listForms(tenantId = getDefaultTenantId()): PublishedFormView[] {
   return getRepository()
     .listFormsByTenant(tenantId)
@@ -298,7 +310,7 @@ function setSessionStatus(
   return getNextStep(sessionId, tenantId);
 }
 
-function getVersion(versionId: string): FormVersionRecord {
+export function getVersion(versionId: string): FormVersionRecord {
   const version = getRepository().getVersion(versionId);
   if (!version) throw publicError('NOT_FOUND', 'Form version was not found.', 404);
   return version;
