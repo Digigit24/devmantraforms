@@ -328,8 +328,16 @@ function validateAnswer(field: FormField, value: AnswerValue, answers: SessionAn
       throw publicError('INVALID_INPUT', `Must be no more than ${field.validation.max_length} characters.`, 400, field.id);
     }
   }
-  if (field.type === 'number' && typeof value !== 'number') {
-    throw publicError('INVALID_INPUT', 'Expected a number.', 400, field.id);
+  if (field.type === 'number') {
+    if (typeof value !== 'number') {
+      throw publicError('INVALID_INPUT', 'Expected a number.', 400, field.id);
+    }
+    if (field.validation.min !== undefined && value < field.validation.min) {
+      throw publicError('INVALID_INPUT', `Must be at least ${field.validation.min}.`, 400, field.id);
+    }
+    if (field.validation.max !== undefined && value > field.validation.max) {
+      throw publicError('INVALID_INPUT', `Must be no more than ${field.validation.max}.`, 400, field.id);
+    }
   }
   if (field.type === 'single_select') validateChoice(field, value);
   if (field.type === 'multi_select') validateMultiChoice(field, value);

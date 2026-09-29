@@ -357,6 +357,31 @@ describe('submitAnswer: valid answers', () => {
     submitAnswer(sessionId, { field_id: 'age', value: 30 });
     expect(getSession(sessionId).answers.map((answer) => answer.value)).toEqual(['blue', ['a', 'b'], 30]);
   });
+
+  it('accepts a number field without min/max at any value', () => {
+    const { sessionId } = startBasicSession();
+    submitAnswer(sessionId, { field_id: 'age', value: -100 });
+    expect(getSession(sessionId).answers.find((answer) => answer.field_id === 'age')?.value).toBe(-100);
+  });
+
+  it('accepts a number equal to the declared min or max, and inside the range', () => {
+    const form = createPublishedForm({
+      title: 'Bounded Number',
+      fields: [{ id: 'score', type: 'number', label: 'Score', validation: { min: 1, max: 10 } }],
+    });
+
+    const atMin = startSession(form.id);
+    submitAnswer(atMin.session_id, { field_id: 'score', value: 1 });
+    expect(getSession(atMin.session_id).answers[0]?.value).toBe(1);
+
+    const atMax = startSession(form.id);
+    submitAnswer(atMax.session_id, { field_id: 'score', value: 10 });
+    expect(getSession(atMax.session_id).answers[0]?.value).toBe(10);
+
+    const inRange = startSession(form.id);
+    submitAnswer(inRange.session_id, { field_id: 'score', value: 5 });
+    expect(getSession(inRange.session_id).answers[0]?.value).toBe(5);
+  });
 });
 
 describe('submitAnswer: invalid answers', () => {
@@ -412,6 +437,28 @@ describe('submitAnswer: invalid answers', () => {
   it('rejects a non-number for a number field', () => {
     const { sessionId } = startBasicSession();
     expectPublicError(() => submitAnswer(sessionId, { field_id: 'age', value: 'thirty' }), 'INVALID_INPUT', 400);
+  });
+
+  it('enforces min/max bounds on a number field that declares them', () => {
+    const form = createPublishedForm({
+      title: 'Bounded Number',
+      fields: [{ id: 'score', type: 'number', label: 'Score', validation: { min: 1, max: 10 } }],
+    });
+    const first = startSession(form.id);
+
+    const tooLow = expectPublicError(
+      () => submitAnswer(first.session_id, { field_id: 'score', value: 0 }),
+      'INVALID_INPUT',
+      400,
+    );
+    expect(tooLow.field).toBe('score');
+
+    const tooHigh = expectPublicError(
+      () => submitAnswer(first.session_id, { field_id: 'score', value: 11 }),
+      'INVALID_INPUT',
+      400,
+    );
+    expect(tooHigh.field).toBe('score');
   });
 
   it('rejects an unknown field id', () => {
