@@ -8,7 +8,7 @@ Read `AGENTS.md` first. The project values small, reviewable vertical slices and
 - Add or update types and Zod schemas at the boundary.
 - Add tests for happy paths, invalid input, permissions, retries, and state transitions.
 - Update MCP examples when resources or tools change.
-- Run the available checks: `npm run lint`, `npx tsc --noEmit`, and `npm run build`.
+- Run the available checks: `npm run lint`, `npm test`, `npx tsc --noEmit`, and `npm run build`.
 - Never commit secrets, real candidate media, or production personal data.
 
 ## Commit and review expectations
