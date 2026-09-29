@@ -41,6 +41,33 @@ describe('form schema: valid definitions', () => {
   it('accepts a partial update', () => {
     expect(UpdateFormInputSchema.parse({ title: 'Renamed' }).title).toBe('Renamed');
   });
+
+  it('accepts a visible_if that targets an existing sibling field', () => {
+    const result = FormSchemaDefinitionSchema.safeParse(conditionalForm);
+    expect(result.success).toBe(true);
+  });
+
+  it('accepts single_select and multi_select fields with valid, distinct options', () => {
+    const result = FormSchemaDefinitionSchema.safeParse(basicForm);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      const color = result.data.fields.find((field) => field.id === 'color');
+      const tags = result.data.fields.find((field) => field.id === 'tags');
+      expect(color?.options).toEqual([
+        { label: 'Red', value: 'red' },
+        { label: 'Blue', value: 'blue' },
+      ]);
+      expect(tags?.options).toEqual([
+        { label: 'A', value: 'a' },
+        { label: 'B', value: 'b' },
+      ]);
+    }
+  });
+
+  it('still accepts the existing sample and fixture form definitions', () => {
+    expect(FormSchemaDefinitionSchema.safeParse(basicForm).success).toBe(true);
+    expect(FormSchemaDefinitionSchema.safeParse(conditionalForm).success).toBe(true);
+  });
 });
 
 describe('form schema: invalid definitions', () => {
@@ -106,6 +133,81 @@ describe('form schema: invalid definitions', () => {
 
   it('rejects an update that empties the field list', () => {
     expect(UpdateFormInputSchema.safeParse({ fields: [] }).success).toBe(false);
+  });
+
+  it('rejects duplicate field ids within the same form', () => {
+    const result = FormSchemaDefinitionSchema.safeParse({
+      title: 'Bad',
+      fields: [
+        { id: 'q1', type: 'short_text', label: 'First question' },
+        { id: 'q1', type: 'short_text', label: 'Second question, same id' },
+      ],
+    });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues.some((issue) => issue.message.includes('Duplicate field id'))).toBe(true);
+    }
+  });
+
+  it('rejects a visible_if that targets a field id not present in the form', () => {
+    const result = FormSchemaDefinitionSchema.safeParse({
+      title: 'Bad',
+      fields: [
+        {
+          id: 'q1',
+          type: 'short_text',
+          label: 'Name',
+          visible_if: { field_id: 'does_not_exist', operator: 'equals', value: 'yes' },
+        },
+      ],
+    });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues.some((issue) => issue.message.includes('does not match any field'))).toBe(true);
+    }
+  });
+
+  it('rejects a single_select field with no options', () => {
+    const result = FormSchemaDefinitionSchema.safeParse({
+      title: 'Bad',
+      fields: [{ id: 'q1', type: 'single_select', label: 'Pick one' }],
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('rejects a single_select field with an empty options array', () => {
+    const result = FormSchemaDefinitionSchema.safeParse({
+      title: 'Bad',
+      fields: [{ id: 'q1', type: 'single_select', label: 'Pick one', options: [] }],
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('rejects a multi_select field with no options', () => {
+    const result = FormSchemaDefinitionSchema.safeParse({
+      title: 'Bad',
+      fields: [{ id: 'q1', type: 'multi_select', label: 'Pick some' }],
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('rejects duplicate option values within the same field', () => {
+    const result = FormSchemaDefinitionSchema.safeParse({
+      title: 'Bad',
+      fields: [{
+        id: 'q1',
+        type: 'single_select',
+        label: 'Pick one',
+        options: [
+          { label: 'Red', value: 'red' },
+          { label: 'Also red', value: 'red' },
+        ],
+      }],
+    });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues.some((issue) => issue.message.includes('duplicate option value'))).toBe(true);
+    }
   });
 });
 
