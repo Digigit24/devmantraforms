@@ -9,6 +9,7 @@ import type {
   TenantRecord,
 } from './types';
 import type { FormSchemaDefinition } from './schema';
+import type { AgenticFormsRepository } from './repository';
 
 interface StoreState {
   forms: Map<string, FormRecord>;
@@ -142,6 +143,50 @@ function createSeedStore(): StoreState {
 export function getStore(): StoreState {
   globalThis.__agenticFormsStore ??= createSeedStore();
   return globalThis.__agenticFormsStore;
+}
+
+// The only persistence implementation today. Wraps the same singleton StoreState
+// getStore() returns, so getRepository() always reflects the current store —
+// including after resetStore() clears it between tests — and doesn't cache
+// anything across calls.
+function createInMemoryRepository(state: StoreState): AgenticFormsRepository {
+  return {
+    listTenants: () => [...state.tenants.values()],
+    getTenantBySlug: (slug) => [...state.tenants.values()].find((tenant) => tenant.slug === slug),
+
+    listFormsByTenant: (tenantId) => [...state.forms.values()].filter((form) => form.tenant_id === tenantId),
+    getForm: (formId) => state.forms.get(formId),
+    saveForm: (form) => {
+      state.forms.set(form.id, form);
+    },
+
+    listVersionsByForm: (formId) => [...state.versions.values()].filter((version) => version.form_id === formId),
+    getVersion: (versionId) => state.versions.get(versionId),
+    saveVersion: (version) => {
+      state.versions.set(version.id, version);
+    },
+
+    getSession: (sessionId) => state.sessions.get(sessionId),
+    saveSession: (session) => {
+      state.sessions.set(session.id, session);
+    },
+
+    getSubmission: (submissionId) => state.submissions.get(submissionId),
+    findSubmissionBySession: (sessionId) =>
+      [...state.submissions.values()].find((submission) => submission.session_id === sessionId),
+    saveSubmission: (submission) => {
+      state.submissions.set(submission.id, submission);
+    },
+
+    getArtifact: (artifactId) => state.artifacts.get(artifactId),
+    saveArtifact: (artifact) => {
+      state.artifacts.set(artifact.id, artifact);
+    },
+  };
+}
+
+export function getRepository(): AgenticFormsRepository {
+  return createInMemoryRepository(getStore());
 }
 
 export function createId(prefix: string) {

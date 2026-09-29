@@ -9,7 +9,7 @@ import {
   type FormSchemaDefinition,
 } from './schema';
 import { AgenticFormError, publicError } from './errors';
-import { createAnswer, createEvent, createId, getDefaultTenantId, getStore, now } from './store';
+import { createAnswer, createEvent, createId, getDefaultTenantId, getRepository, now } from './store';
 import { getArtifact, markArtifactAttached } from './storage';
 import type {
   FormRecord,
@@ -23,25 +23,24 @@ import type {
 } from './types';
 
 export function listTenants(): TenantRecord[] {
-  return [...getStore().tenants.values()];
+  return getRepository().listTenants();
 }
 
 export function getTenantBySlug(slug: string): TenantRecord {
-  const tenant = [...getStore().tenants.values()].find((candidate) => candidate.slug === slug);
+  const tenant = getRepository().getTenantBySlug(slug);
   if (!tenant) throw publicError('NOT_FOUND', 'Tenant was not found.', 404);
   return tenant;
 }
 
 export function listForms(tenantId = getDefaultTenantId()): PublishedFormView[] {
-  const store = getStore();
-  return [...store.forms.values()]
-    .filter((form) => form.tenant_id === tenantId)
+  return getRepository()
+    .listFormsByTenant(tenantId)
     .map((form) => toPublishedView(form));
 }
 
 export function createForm(input: unknown, tenantId = getDefaultTenantId()): PublishedFormView {
   const data = CreateFormInputSchema.parse(input);
-  const store = getStore();
+  const repo = getRepository();
   const timestamp = now();
   const form: FormRecord = {
     id: createId('form'),
@@ -58,12 +57,12 @@ export function createForm(input: unknown, tenantId = getDefaultTenantId()): Pub
     created_at: timestamp,
     updated_at: timestamp,
   };
-  store.forms.set(form.id, form);
+  repo.saveForm(form);
   return toPublishedView(form);
 }
 
 export function getForm(formId: string, tenantId?: string): PublishedFormView {
-  const form = getStore().forms.get(formId);
+  const form = getRepository().getForm(formId);
   if (!form) throw publicError('NOT_FOUND', 'Form was not found.', 404);
   if (tenantId && form.tenant_id !== tenantId) throw publicError('NOT_FOUND', 'Form was not found.', 404);
   return toPublishedView(form);
@@ -71,21 +70,21 @@ export function getForm(formId: string, tenantId?: string): PublishedFormView {
 
 export function updateForm(formId: string, input: unknown): PublishedFormView {
   const patch = UpdateFormInputSchema.parse(input);
-  const store = getStore();
-  const form = store.forms.get(formId);
+  const repo = getRepository();
+  const form = repo.getForm(formId);
   if (!form) throw publicError('NOT_FOUND', 'Form was not found.', 404);
   const draft = FormSchemaDefinitionSchema.parse({ ...form.draft, ...patch });
   const next: FormRecord = { ...form, draft, updated_at: now() };
-  store.forms.set(formId, next);
+  repo.saveForm(next);
   return toPublishedView(next);
 }
 
 export function publishForm(formId: string, tenantId?: string): PublishedFormView {
-  const store = getStore();
-  const form = store.forms.get(formId);
+  const repo = getRepository();
+  const form = repo.getForm(formId);
   if (!form) throw publicError('NOT_FOUND', 'Form was not found.', 404);
   if (tenantId && form.tenant_id !== tenantId) throw publicError('NOT_FOUND', 'Form was not found.', 404);
-  const existingVersions = [...store.versions.values()].filter((version) => version.form_id === formId);
+  const existingVersions = repo.listVersionsByForm(formId);
   const version: FormVersionRecord = {
     id: createId('fv'),
     form_id: formId,
@@ -100,14 +99,14 @@ export function publishForm(formId: string, tenantId?: string): PublishedFormVie
     current_version_id: version.id,
     updated_at: now(),
   };
-  store.versions.set(version.id, version);
-  store.forms.set(formId, next);
+  repo.saveVersion(version);
+  repo.saveForm(next);
   return toPublishedView(next);
 }
 
 export function startSession(formId: string, respondentId?: string, tenantId?: string): NextStepResponse {
-  const store = getStore();
-  const form = store.forms.get(formId);
+  const repo = getRepository();
+  const form = repo.getForm(formId);
   if (!form) throw publicError('NOT_FOUND', 'Form was not found.', 404);
   if (tenantId && form.tenant_id !== tenantId) throw publicError('NOT_FOUND', 'Form was not found.', 404);
   if (form.status !== 'published' || !form.current_version_id) {
@@ -128,12 +127,12 @@ export function startSession(formId: string, respondentId?: string, tenantId?: s
     updated_at: now(),
   };
   session.events.push(createEvent(sessionId, 'session_started', { form_id: formId }, { form_version_id: version.id }));
-  store.sessions.set(sessionId, session);
+  repo.saveSession(session);
   return getNextStep(sessionId);
 }
 
 export function getSession(sessionId: string): SessionRecord {
-  const session = getStore().sessions.get(sessionId);
+  const session = getRepository().getSession(sessionId);
   if (!session) throw publicError('NOT_FOUND', 'Session was not found.', 404);
   return session;
 }
@@ -174,7 +173,7 @@ export function getNextStep(sessionId: string): NextStepResponse {
 
 export function submitAnswer(sessionId: string, input: unknown, source: SessionAnswer['source'] = 'human'): NextStepResponse {
   const data = SubmitAnswerInputSchema.parse(input);
-  const store = getStore();
+  const repo = getRepository();
   const session = getSession(sessionId);
   if (session.status !== 'awaiting_answer') {
     throw publicError('SESSION_CONFLICT', 'Session is not awaiting an answer.', 409);
@@ -204,7 +203,7 @@ export function submitAnswer(sessionId: string, input: unknown, source: SessionA
     ],
   };
 
-  store.sessions.set(session.id, nextSession);
+  repo.saveSession(nextSession);
   return getNextStep(sessionId);
 }
 
@@ -217,7 +216,7 @@ export function resumeSession(sessionId: string) {
 }
 
 export function completeSession(sessionId: string): SubmissionRecord {
-  const store = getStore();
+  const repo = getRepository();
   const session = getSession(sessionId);
   const version = getVersion(session.form_version_id);
   const missingRequired = version.schema.fields.filter((field) => {
@@ -240,7 +239,7 @@ export function completeSession(sessionId: string): SubmissionRecord {
     completed_at: timestamp,
     events: [...session.events, createEvent(session.id, 'session_completed')],
   };
-  const existing = [...store.submissions.values()].find((submission) => submission.session_id === sessionId);
+  const existing = repo.findSubmissionBySession(sessionId);
   if (existing) return existing;
 
   const submission: SubmissionRecord = {
@@ -253,19 +252,19 @@ export function completeSession(sessionId: string): SubmissionRecord {
     created_at: timestamp,
   };
 
-  store.sessions.set(sessionId, nextSession);
-  store.submissions.set(submission.id, submission);
+  repo.saveSession(nextSession);
+  repo.saveSubmission(submission);
   return submission;
 }
 
 export function getSubmission(submissionId: string): SubmissionRecord {
-  const submission = getStore().submissions.get(submissionId);
+  const submission = getRepository().getSubmission(submissionId);
   if (!submission) throw publicError('NOT_FOUND', 'Submission was not found.', 404);
   return submission;
 }
 
 function setSessionStatus(sessionId: string, status: SessionRecord['status'], eventType: SessionRecord['events'][number]['type']) {
-  const store = getStore();
+  const repo = getRepository();
   const session = getSession(sessionId);
   if (session.status === 'completed') {
     throw publicError('SESSION_CONFLICT', 'Session is already completed.', 409);
@@ -276,18 +275,18 @@ function setSessionStatus(sessionId: string, status: SessionRecord['status'], ev
     updated_at: now(),
     events: [...session.events, createEvent(session.id, eventType)],
   };
-  store.sessions.set(session.id, next);
+  repo.saveSession(next);
   return getNextStep(sessionId);
 }
 
 function getVersion(versionId: string): FormVersionRecord {
-  const version = getStore().versions.get(versionId);
+  const version = getRepository().getVersion(versionId);
   if (!version) throw publicError('NOT_FOUND', 'Form version was not found.', 404);
   return version;
 }
 
 function toPublishedView(form: FormRecord): PublishedFormView {
-  const currentVersion = form.current_version_id ? getStore().versions.get(form.current_version_id) ?? null : null;
+  const currentVersion = form.current_version_id ? getRepository().getVersion(form.current_version_id) ?? null : null;
   return {
     id: form.id,
     tenant_id: form.tenant_id,
