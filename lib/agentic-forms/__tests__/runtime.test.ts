@@ -382,6 +382,45 @@ describe('submitAnswer: valid answers', () => {
     submitAnswer(inRange.session_id, { field_id: 'score', value: 5 });
     expect(getSession(inRange.session_id).answers[0]?.value).toBe(5);
   });
+
+  it('accepts a rating field without min/max at any numeric value', () => {
+    const form = createPublishedForm({
+      title: 'Unbounded Rating',
+      fields: [{ id: 'satisfaction', type: 'rating', label: 'How satisfied are you?' }],
+    });
+    const first = startSession(form.id);
+    submitAnswer(first.session_id, { field_id: 'satisfaction', value: 42 });
+    expect(getSession(first.session_id).answers[0]?.value).toBe(42);
+  });
+
+  it('accepts a rating equal to the declared min or max, and inside the range', () => {
+    const form = createPublishedForm({
+      title: 'Bounded Rating',
+      fields: [{ id: 'satisfaction', type: 'rating', label: 'How satisfied are you?', validation: { min: 1, max: 5 } }],
+    });
+
+    const atMin = startSession(form.id);
+    submitAnswer(atMin.session_id, { field_id: 'satisfaction', value: 1 });
+    expect(getSession(atMin.session_id).answers[0]?.value).toBe(1);
+
+    const atMax = startSession(form.id);
+    submitAnswer(atMax.session_id, { field_id: 'satisfaction', value: 5 });
+    expect(getSession(atMax.session_id).answers[0]?.value).toBe(5);
+
+    const inRange = startSession(form.id);
+    submitAnswer(inRange.session_id, { field_id: 'satisfaction', value: 3 });
+    expect(getSession(inRange.session_id).answers[0]?.value).toBe(3);
+  });
+
+  it('accepts a decimal rating value', () => {
+    const form = createPublishedForm({
+      title: 'Bounded Rating',
+      fields: [{ id: 'satisfaction', type: 'rating', label: 'How satisfied are you?', validation: { min: 1, max: 5 } }],
+    });
+    const first = startSession(form.id);
+    submitAnswer(first.session_id, { field_id: 'satisfaction', value: 3.5 });
+    expect(getSession(first.session_id).answers[0]?.value).toBe(3.5);
+  });
 });
 
 describe('submitAnswer: invalid answers', () => {
@@ -459,6 +498,41 @@ describe('submitAnswer: invalid answers', () => {
       400,
     );
     expect(tooHigh.field).toBe('score');
+  });
+
+  it('rejects a non-number for a rating field', () => {
+    const form = createPublishedForm({
+      title: 'Unbounded Rating',
+      fields: [{ id: 'satisfaction', type: 'rating', label: 'How satisfied are you?' }],
+    });
+    const first = startSession(form.id);
+    expectPublicError(
+      () => submitAnswer(first.session_id, { field_id: 'satisfaction', value: 'great' }),
+      'INVALID_INPUT',
+      400,
+    );
+  });
+
+  it('enforces min/max bounds on a rating field that declares them', () => {
+    const form = createPublishedForm({
+      title: 'Bounded Rating',
+      fields: [{ id: 'satisfaction', type: 'rating', label: 'How satisfied are you?', validation: { min: 1, max: 5 } }],
+    });
+    const first = startSession(form.id);
+
+    const tooLow = expectPublicError(
+      () => submitAnswer(first.session_id, { field_id: 'satisfaction', value: 0 }),
+      'INVALID_INPUT',
+      400,
+    );
+    expect(tooLow.field).toBe('satisfaction');
+
+    const tooHigh = expectPublicError(
+      () => submitAnswer(first.session_id, { field_id: 'satisfaction', value: 6 }),
+      'INVALID_INPUT',
+      400,
+    );
+    expect(tooHigh.field).toBe('satisfaction');
   });
 
   it('rejects an unknown field id', () => {
