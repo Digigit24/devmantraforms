@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "vitest run"
+    "test": "vitest run",
+    "celiyo:tenant:create": "tsx scripts/create-tenant.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1137.0",
@@ -37,6 +38,7 @@
     "eslint-config-next": "^15.3.1",
     "postcss": "^8.4.38",
     "tailwindcss": "^3.4.1",
+    "tsx": "^4.23.15",
     "typescript": "^5",
     "vitest": "^4.1.11"
   }

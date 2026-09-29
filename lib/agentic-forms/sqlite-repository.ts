@@ -8,6 +8,7 @@ import type {
   SessionEvent,
   SessionRecord,
   SubmissionRecord,
+  TenantApiKeyRecord,
   TenantRecord,
 } from './types';
 import type { FormSchemaDefinition } from './schema';
@@ -113,6 +114,18 @@ CREATE TABLE IF NOT EXISTS artifacts (
 );
 CREATE INDEX IF NOT EXISTS idx_artifacts_session_id ON artifacts(session_id);
 CREATE INDEX IF NOT EXISTS idx_artifacts_tenant_id ON artifacts(tenant_id);
+
+CREATE TABLE IF NOT EXISTS tenant_api_keys (
+  id TEXT PRIMARY KEY,
+  tenant_id TEXT NOT NULL REFERENCES tenants(id),
+  key_prefix TEXT NOT NULL,
+  key_hint TEXT NOT NULL,
+  key_hash TEXT NOT NULL UNIQUE,
+  created_at TEXT NOT NULL,
+  revoked_at TEXT,
+  last_used_at TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_tenant_api_keys_tenant_id ON tenant_api_keys(tenant_id);
 `;
 
 export interface SqliteRepositoryHandle extends AgenticFormsRepository {
@@ -139,9 +152,21 @@ export function createSqliteRepository(
 
   const stmt = {
     getTenantBySlug: db.prepare('SELECT * FROM tenants WHERE slug = ?'),
+    getTenantById: db.prepare('SELECT * FROM tenants WHERE id = ?'),
     listTenants: db.prepare('SELECT * FROM tenants'),
+    upsertTenant: db.prepare(`
+      INSERT INTO tenants (id, slug, name, plan, mcp_endpoint, api_key_hint, created_at)
+      VALUES (@id, @slug, @name, @plan, @mcp_endpoint, @api_key_hint, @created_at)
+      ON CONFLICT(id) DO UPDATE SET
+        slug = excluded.slug,
+        name = excluded.name,
+        plan = excluded.plan,
+        mcp_endpoint = excluded.mcp_endpoint,
+        api_key_hint = excluded.api_key_hint
+    `),
 
     getForm: db.prepare('SELECT * FROM forms WHERE id = ?'),
+    getFormForTenant: db.prepare('SELECT * FROM forms WHERE id = ? AND tenant_id = ?'),
     listFormsByTenant: db.prepare('SELECT * FROM forms WHERE tenant_id = ?'),
     upsertForm: db.prepare(`
       INSERT INTO forms (id, tenant_id, owner_id, status, draft, current_version_id, created_at, updated_at)
@@ -168,6 +193,7 @@ export function createSqliteRepository(
     `),
 
     getSession: db.prepare('SELECT * FROM sessions WHERE id = ?'),
+    getSessionForTenant: db.prepare('SELECT * FROM sessions WHERE id = ? AND tenant_id = ?'),
     upsertSession: db.prepare(`
       INSERT INTO sessions (id, tenant_id, form_id, form_version_id, status, respondent_id, created_at, updated_at, completed_at)
       VALUES (@id, @tenant_id, @form_id, @form_version_id, @status, @respondent_id, @created_at, @updated_at, @completed_at)
@@ -193,6 +219,7 @@ export function createSqliteRepository(
     `),
 
     getSubmission: db.prepare('SELECT * FROM submissions WHERE id = ?'),
+    getSubmissionForTenant: db.prepare('SELECT * FROM submissions WHERE id = ? AND tenant_id = ?'),
     findSubmissionBySession: db.prepare('SELECT * FROM submissions WHERE session_id = ?'),
     insertSubmission: db.prepare(`
       INSERT INTO submissions (id, tenant_id, session_id, form_id, form_version_id, created_at)
@@ -201,6 +228,7 @@ export function createSqliteRepository(
     `),
 
     getArtifact: db.prepare('SELECT * FROM artifacts WHERE id = ?'),
+    getArtifactForTenant: db.prepare('SELECT * FROM artifacts WHERE id = ? AND tenant_id = ?'),
     upsertArtifact: db.prepare(`
       INSERT INTO artifacts (id, tenant_id, session_id, field_id, filename, content_type, size_bytes, duration_seconds, bucket, key, url, status, created_at)
       VALUES (@id, @tenant_id, @session_id, @field_id, @filename, @content_type, @size_bytes, @duration_seconds, @bucket, @key, @url, @status, @created_at)
@@ -214,6 +242,15 @@ export function createSqliteRepository(
         url = excluded.url,
         status = excluded.status
     `),
+
+    insertApiKey: db.prepare(`
+      INSERT INTO tenant_api_keys (id, tenant_id, key_prefix, key_hint, key_hash, created_at, revoked_at, last_used_at)
+      VALUES (@id, @tenant_id, @key_prefix, @key_hint, @key_hash, @created_at, @revoked_at, @last_used_at)
+    `),
+    findActiveApiKeyByHash: db.prepare('SELECT * FROM tenant_api_keys WHERE key_hash = ? AND revoked_at IS NULL'),
+    listApiKeysByTenant: db.prepare('SELECT * FROM tenant_api_keys WHERE tenant_id = ? ORDER BY created_at ASC'),
+    revokeApiKey: db.prepare('UPDATE tenant_api_keys SET revoked_at = @revoked_at WHERE id = @id AND revoked_at IS NULL'),
+    touchApiKeyLastUsed: db.prepare('UPDATE tenant_api_keys SET last_used_at = @last_used_at WHERE id = @id'),
   };
 
   function rowToTenant(row: Record<string, unknown>): TenantRecord {
@@ -225,6 +262,19 @@ export function createSqliteRepository(
       mcp_endpoint: row.mcp_endpoint as string,
       api_key_hint: row.api_key_hint as string,
       created_at: row.created_at as string,
+    };
+  }
+
+  function rowToApiKey(row: Record<string, unknown>): TenantApiKeyRecord {
+    return {
+      id: row.id as string,
+      tenant_id: row.tenant_id as string,
+      key_prefix: row.key_prefix as string,
+      key_hint: row.key_hint as string,
+      key_hash: row.key_hash as string,
+      created_at: row.created_at as string,
+      revoked_at: (row.revoked_at as string | null) ?? undefined,
+      last_used_at: (row.last_used_at as string | null) ?? undefined,
     };
   }
 
@@ -377,11 +427,30 @@ export function createSqliteRepository(
       const row = stmt.getTenantBySlug.get(slug) as Record<string, unknown> | undefined;
       return row ? rowToTenant(row) : undefined;
     },
+    getTenantById: (tenantId) => {
+      const row = stmt.getTenantById.get(tenantId) as Record<string, unknown> | undefined;
+      return row ? rowToTenant(row) : undefined;
+    },
+    saveTenant: (tenant) => {
+      stmt.upsertTenant.run({
+        id: tenant.id,
+        slug: tenant.slug,
+        name: tenant.name,
+        plan: tenant.plan,
+        mcp_endpoint: tenant.mcp_endpoint,
+        api_key_hint: tenant.api_key_hint,
+        created_at: tenant.created_at,
+      });
+    },
 
     listFormsByTenant: (tenantId) =>
       (stmt.listFormsByTenant.all(tenantId) as Record<string, unknown>[]).map(rowToForm),
     getForm: (formId) => {
       const row = stmt.getForm.get(formId) as Record<string, unknown> | undefined;
+      return row ? rowToForm(row) : undefined;
+    },
+    getFormForTenant: (formId, tenantId) => {
+      const row = stmt.getFormForTenant.get(formId, tenantId) as Record<string, unknown> | undefined;
       return row ? rowToForm(row) : undefined;
     },
     saveForm: (form) => {
@@ -422,10 +491,18 @@ export function createSqliteRepository(
       const row = stmt.getSession.get(sessionId) as Record<string, unknown> | undefined;
       return row ? rowToSession(row) : undefined;
     },
+    getSessionForTenant: (sessionId, tenantId) => {
+      const row = stmt.getSessionForTenant.get(sessionId, tenantId) as Record<string, unknown> | undefined;
+      return row ? rowToSession(row) : undefined;
+    },
     saveSession,
 
     getSubmission: (submissionId) => {
       const row = stmt.getSubmission.get(submissionId) as Record<string, unknown> | undefined;
+      return row ? rowToSubmission(row) : undefined;
+    },
+    getSubmissionForTenant: (submissionId, tenantId) => {
+      const row = stmt.getSubmissionForTenant.get(submissionId, tenantId) as Record<string, unknown> | undefined;
       return row ? rowToSubmission(row) : undefined;
     },
     findSubmissionBySession: (sessionId) => {
@@ -447,6 +524,10 @@ export function createSqliteRepository(
       const row = stmt.getArtifact.get(artifactId) as Record<string, unknown> | undefined;
       return row ? rowToArtifact(row) : undefined;
     },
+    getArtifactForTenant: (artifactId, tenantId) => {
+      const row = stmt.getArtifactForTenant.get(artifactId, tenantId) as Record<string, unknown> | undefined;
+      return row ? rowToArtifact(row) : undefined;
+    },
     saveArtifact: (artifact) => {
       stmt.upsertArtifact.run({
         id: artifact.id,
@@ -463,6 +544,31 @@ export function createSqliteRepository(
         status: artifact.status,
         created_at: artifact.created_at,
       });
+    },
+
+    saveApiKey: (apiKey) => {
+      stmt.insertApiKey.run({
+        id: apiKey.id,
+        tenant_id: apiKey.tenant_id,
+        key_prefix: apiKey.key_prefix,
+        key_hint: apiKey.key_hint,
+        key_hash: apiKey.key_hash,
+        created_at: apiKey.created_at,
+        revoked_at: apiKey.revoked_at ?? null,
+        last_used_at: apiKey.last_used_at ?? null,
+      });
+    },
+    findActiveApiKeyByHash: (keyHash) => {
+      const row = stmt.findActiveApiKeyByHash.get(keyHash) as Record<string, unknown> | undefined;
+      return row ? rowToApiKey(row) : undefined;
+    },
+    listApiKeysByTenant: (tenantId) =>
+      (stmt.listApiKeysByTenant.all(tenantId) as Record<string, unknown>[]).map(rowToApiKey),
+    revokeApiKey: (apiKeyId) => {
+      stmt.revokeApiKey.run({ id: apiKeyId, revoked_at: new Date().toISOString() });
+    },
+    touchApiKeyLastUsed: (apiKeyId, timestamp) => {
+      stmt.touchApiKeyLastUsed.run({ id: apiKeyId, last_used_at: timestamp });
     },
 
     close: () => db.close(),

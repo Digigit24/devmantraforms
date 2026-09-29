@@ -62,9 +62,9 @@ export function createForm(input: unknown, tenantId = getDefaultTenantId()): Pub
 }
 
 export function getForm(formId: string, tenantId?: string): PublishedFormView {
-  const form = getRepository().getForm(formId);
+  const repo = getRepository();
+  const form = tenantId ? repo.getFormForTenant(formId, tenantId) : repo.getForm(formId);
   if (!form) throw publicError('NOT_FOUND', 'Form was not found.', 404);
-  if (tenantId && form.tenant_id !== tenantId) throw publicError('NOT_FOUND', 'Form was not found.', 404);
   return toPublishedView(form);
 }
 
@@ -81,9 +81,8 @@ export function updateForm(formId: string, input: unknown): PublishedFormView {
 
 export function publishForm(formId: string, tenantId?: string): PublishedFormView {
   const repo = getRepository();
-  const form = repo.getForm(formId);
+  const form = tenantId ? repo.getFormForTenant(formId, tenantId) : repo.getForm(formId);
   if (!form) throw publicError('NOT_FOUND', 'Form was not found.', 404);
-  if (tenantId && form.tenant_id !== tenantId) throw publicError('NOT_FOUND', 'Form was not found.', 404);
   const existingVersions = repo.listVersionsByForm(formId);
   const version: FormVersionRecord = {
     id: createId('fv'),
@@ -106,9 +105,8 @@ export function publishForm(formId: string, tenantId?: string): PublishedFormVie
 
 export function startSession(formId: string, respondentId?: string, tenantId?: string): NextStepResponse {
   const repo = getRepository();
-  const form = repo.getForm(formId);
+  const form = tenantId ? repo.getFormForTenant(formId, tenantId) : repo.getForm(formId);
   if (!form) throw publicError('NOT_FOUND', 'Form was not found.', 404);
-  if (tenantId && form.tenant_id !== tenantId) throw publicError('NOT_FOUND', 'Form was not found.', 404);
   if (form.status !== 'published' || !form.current_version_id) {
     throw publicError('FORM_NOT_PUBLISHED', 'Form is not published yet.', 409);
   }
@@ -131,14 +129,15 @@ export function startSession(formId: string, respondentId?: string, tenantId?: s
   return getNextStep(sessionId);
 }
 
-export function getSession(sessionId: string): SessionRecord {
-  const session = getRepository().getSession(sessionId);
+export function getSession(sessionId: string, tenantId?: string): SessionRecord {
+  const repo = getRepository();
+  const session = tenantId ? repo.getSessionForTenant(sessionId, tenantId) : repo.getSession(sessionId);
   if (!session) throw publicError('NOT_FOUND', 'Session was not found.', 404);
   return session;
 }
 
-export function getNextStep(sessionId: string): NextStepResponse {
-  const session = getSession(sessionId);
+export function getNextStep(sessionId: string, tenantId?: string): NextStepResponse {
+  const session = getSession(sessionId, tenantId);
   const version = getVersion(session.form_version_id);
   const nextField = version.schema.fields.find((field) => isVisible(field, session.answers) && !hasAnswer(session.answers, field.id));
   const allowed = version.schema.policy.allowed_answer_modes;
@@ -171,17 +170,22 @@ export function getNextStep(sessionId: string): NextStepResponse {
   };
 }
 
-export function submitAnswer(sessionId: string, input: unknown, source: SessionAnswer['source'] = 'human'): NextStepResponse {
+export function submitAnswer(
+  sessionId: string,
+  input: unknown,
+  source: SessionAnswer['source'] = 'human',
+  tenantId?: string,
+): NextStepResponse {
   const data = SubmitAnswerInputSchema.parse(input);
   const repo = getRepository();
-  const session = getSession(sessionId);
+  const session = getSession(sessionId, tenantId);
   if (session.status !== 'awaiting_answer') {
     throw publicError('SESSION_CONFLICT', 'Session is not awaiting an answer.', 409);
   }
 
   if (data.idempotency_key) {
     const repeated = session.events.find((event) => event.input?.idempotency_key === data.idempotency_key);
-    if (repeated) return getNextStep(sessionId);
+    if (repeated) return getNextStep(sessionId, tenantId);
   }
 
   const version = getVersion(session.form_version_id);
@@ -204,20 +208,20 @@ export function submitAnswer(sessionId: string, input: unknown, source: SessionA
   };
 
   repo.saveSession(nextSession);
-  return getNextStep(sessionId);
+  return getNextStep(sessionId, tenantId);
 }
 
-export function pauseSession(sessionId: string) {
-  return setSessionStatus(sessionId, 'paused', 'session_paused');
+export function pauseSession(sessionId: string, tenantId?: string) {
+  return setSessionStatus(sessionId, 'paused', 'session_paused', tenantId);
 }
 
-export function resumeSession(sessionId: string) {
-  return setSessionStatus(sessionId, 'awaiting_answer', 'session_resumed');
+export function resumeSession(sessionId: string, tenantId?: string) {
+  return setSessionStatus(sessionId, 'awaiting_answer', 'session_resumed', tenantId);
 }
 
-export function completeSession(sessionId: string): SubmissionRecord {
+export function completeSession(sessionId: string, tenantId?: string): SubmissionRecord {
   const repo = getRepository();
-  const session = getSession(sessionId);
+  const session = getSession(sessionId, tenantId);
   const version = getVersion(session.form_version_id);
   const missingRequired = version.schema.fields.filter((field) => {
     return field.required && isVisible(field, session.answers) && !hasAnswer(session.answers, field.id);
@@ -257,15 +261,21 @@ export function completeSession(sessionId: string): SubmissionRecord {
   return submission;
 }
 
-export function getSubmission(submissionId: string): SubmissionRecord {
-  const submission = getRepository().getSubmission(submissionId);
+export function getSubmission(submissionId: string, tenantId?: string): SubmissionRecord {
+  const repo = getRepository();
+  const submission = tenantId ? repo.getSubmissionForTenant(submissionId, tenantId) : repo.getSubmission(submissionId);
   if (!submission) throw publicError('NOT_FOUND', 'Submission was not found.', 404);
   return submission;
 }
 
-function setSessionStatus(sessionId: string, status: SessionRecord['status'], eventType: SessionRecord['events'][number]['type']) {
+function setSessionStatus(
+  sessionId: string,
+  status: SessionRecord['status'],
+  eventType: SessionRecord['events'][number]['type'],
+  tenantId?: string,
+) {
   const repo = getRepository();
-  const session = getSession(sessionId);
+  const session = getSession(sessionId, tenantId);
   if (session.status === 'completed') {
     throw publicError('SESSION_CONFLICT', 'Session is already completed.', 409);
   }
@@ -276,7 +286,7 @@ function setSessionStatus(sessionId: string, status: SessionRecord['status'], ev
     events: [...session.events, createEvent(session.id, eventType)],
   };
   repo.saveSession(next);
-  return getNextStep(sessionId);
+  return getNextStep(sessionId, tenantId);
 }
 
 function getVersion(versionId: string): FormVersionRecord {

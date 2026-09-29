@@ -1,4 +1,3 @@
-import Database from 'better-sqlite3';
 import { existsSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -10,6 +9,7 @@ import type {
   FormVersionRecord,
   SessionRecord,
   SubmissionRecord,
+  TenantApiKeyRecord,
 } from '@/lib/agentic-forms/types';
 import type { FormSchemaDefinition } from '@/lib/agentic-forms/schema';
 
@@ -20,20 +20,28 @@ let tempDir: string;
 let dbPath: string;
 let repo: SqliteRepositoryHandle;
 
-// AgenticFormsRepository intentionally has no tenant-write method — no real flow creates
-// tenants today (Phase 1's interface was derived strictly from current usage, and tenant
-// creation is Phase 3 work). Forms/sessions/etc. correctly enforce a foreign key against
-// tenants(id), so fixtures need a real tenant row to reference. This opens a second raw
-// connection to the same test file (schema already created by createSqliteRepository in
-// beforeEach) purely to seed that row — it never touches the production module's public
-// surface.
 function insertTenant(id: string, slug: string) {
-  const raw = new Database(dbPath);
-  raw.prepare(`
-    INSERT OR IGNORE INTO tenants (id, slug, name, plan, mcp_endpoint, api_key_hint, created_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
-  `).run(id, slug, slug, 'local', `/api/mcp/${slug}`, 'cf_test_...', '2026-01-01T00:00:00.000Z');
-  raw.close();
+  repo.saveTenant({
+    id,
+    slug,
+    name: slug,
+    plan: 'local',
+    mcp_endpoint: `/api/mcp/${slug}`,
+    api_key_hint: '',
+    created_at: '2026-01-01T00:00:00.000Z',
+  });
+}
+
+function makeApiKey(overrides: Partial<TenantApiKeyRecord> = {}): TenantApiKeyRecord {
+  return {
+    id: 'key_1',
+    tenant_id: 'tenant_1',
+    key_prefix: 'cfmcp_',
+    key_hint: 'ab12',
+    key_hash: 'a'.repeat(64),
+    created_at: '2026-01-01T00:00:00.000Z',
+    ...overrides,
+  };
 }
 
 beforeEach(() => {
@@ -101,9 +109,9 @@ function makeSession(overrides: Partial<SessionRecord> = {}): SessionRecord {
 }
 
 describe('SQLite repository: tenants', () => {
-  // AgenticFormsRepository has no saveTenant/createTenant method — no runtime.ts caller
-  // creates tenants today (matching Phase 1's interface, derived strictly from current
-  // usage). The only way a tenant row exists is the seed step, so that's what's tested here.
+  // These specifically exercise the demo tenant seeded by createSqliteRepository's
+  // { seed: true } option — direct saveTenant()/getTenantById() coverage lives in the
+  // "tenant provisioning" describe block further down.
   it('persists and retrieves the seeded tenant by slug', () => {
     repo.close();
     repo = createSqliteRepository(dbPath, { seed: true });
@@ -439,5 +447,113 @@ describe('SQLite repository: seeding is idempotent and non-destructive', () => {
     reopened.close();
 
     repo = { close: () => {} } as SqliteRepositoryHandle;
+  });
+});
+
+describe('SQLite repository: tenant API keys', () => {
+  it('persists an API key and finds it by hash', () => {
+    const key = makeApiKey();
+    repo.saveApiKey(key);
+    expect(repo.findActiveApiKeyByHash(key.key_hash)).toEqual(key);
+  });
+
+  it('never exposes a plaintext key — only hash and safe display metadata are stored', () => {
+    const key = makeApiKey({ key_hint: 'zzzz' });
+    repo.saveApiKey(key);
+    const stored = repo.findActiveApiKeyByHash(key.key_hash);
+    expect(stored).toBeDefined();
+    // The stored row only ever contains the hash, never a plaintext secret field.
+    expect(Object.keys(stored ?? {}).sort()).toEqual(
+      ['created_at', 'id', 'key_hash', 'key_hint', 'key_prefix', 'last_used_at', 'revoked_at', 'tenant_id'].sort(),
+    );
+  });
+
+  it('does not find a revoked key as active', () => {
+    const key = makeApiKey();
+    repo.saveApiKey(key);
+    repo.revokeApiKey(key.id);
+    expect(repo.findActiveApiKeyByHash(key.key_hash)).toBeUndefined();
+  });
+
+  it('revoking an already-revoked key is a safe no-op (does not change the timestamp again)', () => {
+    const key = makeApiKey();
+    repo.saveApiKey(key);
+    repo.revokeApiKey(key.id);
+    const firstRevokedAt = repo.listApiKeysByTenant('tenant_1')[0]?.revoked_at;
+    repo.revokeApiKey(key.id);
+    const secondRevokedAt = repo.listApiKeysByTenant('tenant_1')[0]?.revoked_at;
+    expect(secondRevokedAt).toBe(firstRevokedAt);
+  });
+
+  it('lists all keys for a tenant, in creation order', () => {
+    repo.saveApiKey(makeApiKey({ id: 'key_1', key_hash: 'a'.repeat(64), created_at: '2026-01-01T00:00:00.000Z' }));
+    repo.saveApiKey(makeApiKey({ id: 'key_2', key_hash: 'b'.repeat(64), created_at: '2026-01-02T00:00:00.000Z' }));
+    const keys = repo.listApiKeysByTenant('tenant_1');
+    expect(keys.map((key) => key.id)).toEqual(['key_1', 'key_2']);
+  });
+
+  it('records last_used_at when touched', () => {
+    const key = makeApiKey();
+    repo.saveApiKey(key);
+    expect(repo.findActiveApiKeyByHash(key.key_hash)?.last_used_at).toBeUndefined();
+    repo.touchApiKeyLastUsed(key.id, '2026-01-01T12:00:00.000Z');
+    expect(repo.findActiveApiKeyByHash(key.key_hash)?.last_used_at).toBe('2026-01-01T12:00:00.000Z');
+  });
+
+  it('API key persists across closing and reopening the SQLite repository', () => {
+    const key = makeApiKey();
+    repo.saveApiKey(key);
+    repo.close();
+
+    const reopened = createSqliteRepository(dbPath);
+    try {
+      const found = reopened.findActiveApiKeyByHash(key.key_hash);
+      expect(found).toBeDefined();
+      expect(found?.tenant_id).toBe('tenant_1');
+      expect(found?.key_hint).toBe(key.key_hint);
+    } finally {
+      reopened.close();
+    }
+
+    repo = { close: () => {} } as SqliteRepositoryHandle;
+  });
+});
+
+describe('SQLite repository: tenant provisioning', () => {
+  it('persists a tenant and retrieves it by id and by slug', () => {
+    repo.saveTenant({
+      id: 'tenant_2',
+      slug: 'globex',
+      name: 'Globex Corp',
+      plan: 'team',
+      mcp_endpoint: '/api/mcp/globex',
+      api_key_hint: '',
+      created_at: '2026-01-01T00:00:00.000Z',
+    });
+    expect(repo.getTenantById('tenant_2')?.slug).toBe('globex');
+    expect(repo.getTenantBySlug('globex')?.id).toBe('tenant_2');
+  });
+
+  it('updating an existing tenant does not create a duplicate row', () => {
+    repo.saveTenant({
+      id: 'tenant_2',
+      slug: 'globex',
+      name: 'Globex Corp',
+      plan: 'team',
+      mcp_endpoint: '/api/mcp/globex',
+      api_key_hint: '',
+      created_at: '2026-01-01T00:00:00.000Z',
+    });
+    repo.saveTenant({
+      id: 'tenant_2',
+      slug: 'globex',
+      name: 'Globex Corp Renamed',
+      plan: 'enterprise',
+      mcp_endpoint: '/api/mcp/globex',
+      api_key_hint: '',
+      created_at: '2026-01-01T00:00:00.000Z',
+    });
+    expect(repo.getTenantById('tenant_2')?.name).toBe('Globex Corp Renamed');
+    expect(repo.listTenants().filter((tenant) => tenant.id === 'tenant_2')).toHaveLength(1);
   });
 });

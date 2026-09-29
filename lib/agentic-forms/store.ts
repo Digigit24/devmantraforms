@@ -6,6 +6,7 @@ import type {
   SessionAnswer,
   SessionRecord,
   SubmissionRecord,
+  TenantApiKeyRecord,
   TenantRecord,
 } from './types';
 import type { FormSchemaDefinition } from './schema';
@@ -19,6 +20,7 @@ interface StoreState {
   sessions: Map<string, SessionRecord>;
   submissions: Map<string, SubmissionRecord>;
   artifacts: Map<string, ArtifactRecord>;
+  apiKeys: Map<string, TenantApiKeyRecord>;
 }
 
 declare global {
@@ -104,6 +106,7 @@ function createSeedStore(): StoreState {
   const sessions = new Map<string, SessionRecord>();
   const submissions = new Map<string, SubmissionRecord>();
   const artifacts = new Map<string, ArtifactRecord>();
+  const apiKeys = new Map<string, TenantApiKeyRecord>();
 
   const formId = 'sample-hiring';
   const tenantId = 'tenant_demo';
@@ -140,7 +143,7 @@ function createSeedStore(): StoreState {
     created_at: createdAt,
   });
 
-  return { tenants, forms, versions, sessions, submissions, artifacts };
+  return { tenants, forms, versions, sessions, submissions, artifacts, apiKeys };
 }
 
 export function getStore(): StoreState {
@@ -156,9 +159,17 @@ function createInMemoryRepository(state: StoreState): AgenticFormsRepository {
   return {
     listTenants: () => [...state.tenants.values()],
     getTenantBySlug: (slug) => [...state.tenants.values()].find((tenant) => tenant.slug === slug),
+    getTenantById: (tenantId) => state.tenants.get(tenantId),
+    saveTenant: (tenant) => {
+      state.tenants.set(tenant.id, tenant);
+    },
 
     listFormsByTenant: (tenantId) => [...state.forms.values()].filter((form) => form.tenant_id === tenantId),
     getForm: (formId) => state.forms.get(formId),
+    getFormForTenant: (formId, tenantId) => {
+      const form = state.forms.get(formId);
+      return form && form.tenant_id === tenantId ? form : undefined;
+    },
     saveForm: (form) => {
       state.forms.set(form.id, form);
     },
@@ -170,11 +181,19 @@ function createInMemoryRepository(state: StoreState): AgenticFormsRepository {
     },
 
     getSession: (sessionId) => state.sessions.get(sessionId),
+    getSessionForTenant: (sessionId, tenantId) => {
+      const session = state.sessions.get(sessionId);
+      return session && session.tenant_id === tenantId ? session : undefined;
+    },
     saveSession: (session) => {
       state.sessions.set(session.id, session);
     },
 
     getSubmission: (submissionId) => state.submissions.get(submissionId),
+    getSubmissionForTenant: (submissionId, tenantId) => {
+      const submission = state.submissions.get(submissionId);
+      return submission && submission.tenant_id === tenantId ? submission : undefined;
+    },
     findSubmissionBySession: (sessionId) =>
       [...state.submissions.values()].find((submission) => submission.session_id === sessionId),
     saveSubmission: (submission) => {
@@ -182,8 +201,31 @@ function createInMemoryRepository(state: StoreState): AgenticFormsRepository {
     },
 
     getArtifact: (artifactId) => state.artifacts.get(artifactId),
+    getArtifactForTenant: (artifactId, tenantId) => {
+      const artifact = state.artifacts.get(artifactId);
+      return artifact && artifact.tenant_id === tenantId ? artifact : undefined;
+    },
     saveArtifact: (artifact) => {
       state.artifacts.set(artifact.id, artifact);
+    },
+
+    saveApiKey: (apiKey) => {
+      state.apiKeys.set(apiKey.id, apiKey);
+    },
+    findActiveApiKeyByHash: (keyHash) =>
+      [...state.apiKeys.values()].find((key) => key.key_hash === keyHash && !key.revoked_at),
+    listApiKeysByTenant: (tenantId) => [...state.apiKeys.values()].filter((key) => key.tenant_id === tenantId),
+    revokeApiKey: (apiKeyId) => {
+      const key = state.apiKeys.get(apiKeyId);
+      if (key && !key.revoked_at) {
+        state.apiKeys.set(apiKeyId, { ...key, revoked_at: now() });
+      }
+    },
+    touchApiKeyLastUsed: (apiKeyId, timestamp) => {
+      const key = state.apiKeys.get(apiKeyId);
+      if (key) {
+        state.apiKeys.set(apiKeyId, { ...key, last_used_at: timestamp });
+      }
     },
   };
 }

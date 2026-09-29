@@ -17,11 +17,11 @@ interface StorageConfig {
   publicBaseUrl?: string;
 }
 
-export async function createArtifactUpload(input: unknown): Promise<ArtifactUpload> {
+export async function createArtifactUpload(input: unknown, tenantId?: string): Promise<ArtifactUpload> {
   const data = CreateArtifactUploadInputSchema.parse(input);
   const config = getStorageConfig();
   const repo = getRepository();
-  const session = repo.getSession(data.session_id);
+  const session = tenantId ? repo.getSessionForTenant(data.session_id, tenantId) : repo.getSession(data.session_id);
   if (!session) throw publicError('NOT_FOUND', 'Session was not found.', 404);
   const key = buildArtifactKey(session.form_id, data.session_id, data.field_id, data.filename);
   const artifact: ArtifactRecord = {
@@ -74,8 +74,9 @@ export async function createArtifactUpload(input: unknown): Promise<ArtifactUplo
   };
 }
 
-export function getArtifact(artifactId: string): ArtifactRecord {
-  const artifact = getRepository().getArtifact(artifactId);
+export function getArtifact(artifactId: string, tenantId?: string): ArtifactRecord {
+  const repo = getRepository();
+  const artifact = tenantId ? repo.getArtifactForTenant(artifactId, tenantId) : repo.getArtifact(artifactId);
   if (!artifact) throw publicError('NOT_FOUND', 'Artifact was not found.', 404);
   return artifact;
 }
