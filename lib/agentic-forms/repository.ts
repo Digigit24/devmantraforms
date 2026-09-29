@@ -39,6 +39,7 @@ export interface AgenticFormsRepository {
   getSubmission(submissionId: string): SubmissionRecord | undefined;
   getSubmissionForTenant(submissionId: string, tenantId: string): SubmissionRecord | undefined;
   findSubmissionBySession(sessionId: string): SubmissionRecord | undefined;
+  listSubmissionsByForm(formId: string, tenantId: string): SubmissionRecord[];
   saveSubmission(submission: SubmissionRecord): void;
 
   getArtifact(artifactId: string): ArtifactRecord | undefined;

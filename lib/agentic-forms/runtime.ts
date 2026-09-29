@@ -68,10 +68,10 @@ export function getForm(formId: string, tenantId?: string): PublishedFormView {
   return toPublishedView(form);
 }
 
-export function updateForm(formId: string, input: unknown): PublishedFormView {
+export function updateForm(formId: string, input: unknown, tenantId?: string): PublishedFormView {
   const patch = UpdateFormInputSchema.parse(input);
   const repo = getRepository();
-  const form = repo.getForm(formId);
+  const form = tenantId ? repo.getFormForTenant(formId, tenantId) : repo.getForm(formId);
   if (!form) throw publicError('NOT_FOUND', 'Form was not found.', 404);
   const draft = FormSchemaDefinitionSchema.parse({ ...form.draft, ...patch });
   const next: FormRecord = { ...form, draft, updated_at: now() };
@@ -266,6 +266,15 @@ export function getSubmission(submissionId: string, tenantId?: string): Submissi
   const submission = tenantId ? repo.getSubmissionForTenant(submissionId, tenantId) : repo.getSubmission(submissionId);
   if (!submission) throw publicError('NOT_FOUND', 'Submission was not found.', 404);
   return submission;
+}
+
+// Submissions are never exposed to an unauthenticated caller — tenantId is required, not
+// optional, unlike getForm/getSession which also serve the public respondent flow.
+export function listSubmissions(formId: string, tenantId: string): SubmissionRecord[] {
+  const repo = getRepository();
+  const form = repo.getFormForTenant(formId, tenantId);
+  if (!form) throw publicError('NOT_FOUND', 'Form was not found.', 404);
+  return repo.listSubmissionsByForm(formId, tenantId);
 }
 
 function setSessionStatus(

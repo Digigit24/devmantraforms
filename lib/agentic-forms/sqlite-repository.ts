@@ -221,6 +221,7 @@ export function createSqliteRepository(
     getSubmission: db.prepare('SELECT * FROM submissions WHERE id = ?'),
     getSubmissionForTenant: db.prepare('SELECT * FROM submissions WHERE id = ? AND tenant_id = ?'),
     findSubmissionBySession: db.prepare('SELECT * FROM submissions WHERE session_id = ?'),
+    listSubmissionsByForm: db.prepare('SELECT * FROM submissions WHERE form_id = ? AND tenant_id = ? ORDER BY created_at ASC'),
     insertSubmission: db.prepare(`
       INSERT INTO submissions (id, tenant_id, session_id, form_id, form_version_id, created_at)
       VALUES (@id, @tenant_id, @session_id, @form_id, @form_version_id, @created_at)
@@ -509,6 +510,8 @@ export function createSqliteRepository(
       const row = stmt.findSubmissionBySession.get(sessionId) as Record<string, unknown> | undefined;
       return row ? rowToSubmission(row) : undefined;
     },
+    listSubmissionsByForm: (formId, tenantId) =>
+      (stmt.listSubmissionsByForm.all(formId, tenantId) as Record<string, unknown>[]).map(rowToSubmission),
     saveSubmission: (submission) => {
       stmt.insertSubmission.run({
         id: submission.id,

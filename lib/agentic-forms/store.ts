@@ -196,6 +196,10 @@ function createInMemoryRepository(state: StoreState): AgenticFormsRepository {
     },
     findSubmissionBySession: (sessionId) =>
       [...state.submissions.values()].find((submission) => submission.session_id === sessionId),
+    listSubmissionsByForm: (formId, tenantId) =>
+      [...state.submissions.values()].filter(
+        (submission) => submission.form_id === formId && submission.tenant_id === tenantId,
+      ),
     saveSubmission: (submission) => {
       state.submissions.set(submission.id, submission);
     },
