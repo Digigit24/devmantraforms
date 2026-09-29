@@ -20,3 +20,6 @@ Thumbs.db
 
 # Netlify
 .netlify/
+
+# TypeScript build cache
+tsconfig.tsbuildinfo

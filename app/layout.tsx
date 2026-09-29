@@ -1,10 +1,6 @@
 import type { Metadata } from 'next';
 import { Inter, Onest } from 'next/font/google';
-import MetaPixelInit from '@/components/analytics/MetaPixelInit';
-import MetaPixelPageView from '@/components/analytics/MetaPixelPageView';
 import './globals.css';
-
-const META_PIXEL_ID = '1298473208904876';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -20,30 +16,19 @@ const onest = Onest({
   display: 'swap',
 });
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://startups.devmantra.com';
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3010';
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: 'Fundability Index - Dev Mantra',
-    template: '%s | Dev Mantra',
+    default: 'CeliyoForms - Agentic Forms and MCP Runtime',
+    template: '%s | CeliyoForms',
   },
-  description:
-    'Answer 12 focused questions. Get an AI-powered fundability score, tier classification, and a personalized 3-step action plan from Dev Mantra\'s advisory team.',
-  keywords: [
-    'fundability score',
-    'investor readiness',
-    'startup funding',
-    'India startup',
-    'Dev Mantra',
-    'fundraising diagnostic',
-    'pitch readiness',
-    'venture capital India',
-    'startup advisor',
-  ],
-  authors: [{ name: 'Dev Mantra Financial Services' }],
-  creator: 'Dev Mantra Financial Services',
-  publisher: 'Dev Mantra Financial Services',
+  description: 'Build tenant-aware forms, async interviews, file and video submissions, and MCP-first workflows for any agent.',
+  keywords: ['agentic forms', 'MCP forms', 'form builder', 'async interview', 'video form', 'AI agents', 'tenant forms'],
+  authors: [{ name: 'CeliyoForms' }],
+  creator: 'CeliyoForms',
+  publisher: 'CeliyoForms',
   robots: {
     index: true,
     follow: true,
@@ -55,29 +40,17 @@ export const metadata: Metadata = {
     },
   },
   openGraph: {
-    title: 'Fundability Index - Are You Investor-Ready?',
-    description: '3 minutes. 12 questions. Instant AI report. Know your fundability score before you pitch.',
-    siteName: 'Dev Mantra',
+    title: 'CeliyoForms - Agentic Forms and MCP Runtime',
+    description: 'A SaaS-ready, tenant-aware form runtime that agents can operate through MCP.',
+    siteName: 'CeliyoForms',
     url: siteUrl,
     type: 'website',
-    locale: 'en_IN',
-    images: [
-      {
-        url: '/fundability_index.png',
-        width: 1734,
-        height: 907,
-        alt: 'India vs Europe Startup Funding Calculator - Dev Mantra',
-        type: 'image/png',
-      },
-    ],
+    locale: 'en_US',
   },
   twitter: {
-    card: 'summary_large_image',
-    title: 'Fundability Index - Are You Investor-Ready?',
-    description: '3 minutes. 12 questions. Instant AI report. Know your fundability score before you pitch.',
-    images: ['/fundability_index.png'],
-    creator: '@devmantra',
-    site: '@devmantra',
+    card: 'summary',
+    title: 'CeliyoForms - Agentic Forms and MCP Runtime',
+    description: 'Build forms that humans answer and agents can run.',
   },
   alternates: {
     canonical: siteUrl,
@@ -91,22 +64,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="theme-color" content="#0B1829" />
         <link rel="icon" href="/favicon.ico" />
       </head>
-      <body>
-        <MetaPixelInit />
-        <MetaPixelPageView />
-
-        <noscript>
-          <img
-            height="1"
-            width="1"
-            style={{ display: 'none' }}
-            src={`https://www.facebook.com/tr?id=${META_PIXEL_ID}&ev=PageView&noscript=1`}
-            alt=""
-          />
-        </noscript>
-
-        {children}
-      </body>
+      <body>{children}</body>
     </html>
   );
 }
