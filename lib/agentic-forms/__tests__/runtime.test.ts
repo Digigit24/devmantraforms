@@ -421,6 +421,26 @@ describe('submitAnswer: valid answers', () => {
     submitAnswer(first.session_id, { field_id: 'satisfaction', value: 3.5 });
     expect(getSession(first.session_id).answers[0]?.value).toBe(3.5);
   });
+
+  it('accepts a valid YYYY-MM-DD date', () => {
+    const form = createPublishedForm({
+      title: 'Date Form',
+      fields: [{ id: 'birthday', type: 'date', label: 'Birthday' }],
+    });
+    const first = startSession(form.id);
+    submitAnswer(first.session_id, { field_id: 'birthday', value: '2026-09-29' });
+    expect(getSession(first.session_id).answers[0]?.value).toBe('2026-09-29');
+  });
+
+  it('accepts a valid leap-year date', () => {
+    const form = createPublishedForm({
+      title: 'Date Form',
+      fields: [{ id: 'birthday', type: 'date', label: 'Birthday' }],
+    });
+    const first = startSession(form.id);
+    submitAnswer(first.session_id, { field_id: 'birthday', value: '2024-02-29' });
+    expect(getSession(first.session_id).answers[0]?.value).toBe('2024-02-29');
+  });
 });
 
 describe('submitAnswer: invalid answers', () => {
@@ -465,6 +485,71 @@ describe('submitAnswer: invalid answers', () => {
     const { sessionId } = startBasicSession();
     expect(() => submitAnswer(sessionId, { field_id: 'email', value: 'not-an-email' })).toThrow(ZodError);
     expect(getSession(sessionId).answers).toEqual([]);
+  });
+
+  describe('date field', () => {
+    function startDateSession() {
+      const form = createPublishedForm({
+        title: 'Date Form',
+        fields: [{ id: 'birthday', type: 'date', label: 'Birthday' }],
+      });
+      return startSession(form.id);
+    }
+
+    it('rejects an impossible day of month (2026-02-31)', () => {
+      const first = startDateSession();
+      const error = expectPublicError(
+        () => submitAnswer(first.session_id, { field_id: 'birthday', value: '2026-02-31' }),
+        'INVALID_INPUT',
+        400,
+      );
+      expect(error.field).toBe('birthday');
+    });
+
+    it('rejects an impossible month (2026-13-01)', () => {
+      const first = startDateSession();
+      expectPublicError(
+        () => submitAnswer(first.session_id, { field_id: 'birthday', value: '2026-13-01' }),
+        'INVALID_INPUT',
+        400,
+      );
+    });
+
+    it('rejects a zero month (2026-00-10)', () => {
+      const first = startDateSession();
+      expectPublicError(
+        () => submitAnswer(first.session_id, { field_id: 'birthday', value: '2026-00-10' }),
+        'INVALID_INPUT',
+        400,
+      );
+    });
+
+    it('rejects February 29 in a non-leap year (2023-02-29)', () => {
+      const first = startDateSession();
+      expectPublicError(
+        () => submitAnswer(first.session_id, { field_id: 'birthday', value: '2023-02-29' }),
+        'INVALID_INPUT',
+        400,
+      );
+    });
+
+    it('rejects a full timestamp instead of a date-only string', () => {
+      const first = startDateSession();
+      expectPublicError(
+        () => submitAnswer(first.session_id, { field_id: 'birthday', value: '2026-09-29T10:00:00Z' }),
+        'INVALID_INPUT',
+        400,
+      );
+    });
+
+    it('rejects a non-string value', () => {
+      const first = startDateSession();
+      expectPublicError(
+        () => submitAnswer(first.session_id, { field_id: 'birthday', value: 20260929 }),
+        'INVALID_INPUT',
+        400,
+      );
+    });
   });
 
   it('rejects an option that is not in the list', () => {

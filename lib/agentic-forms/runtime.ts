@@ -320,6 +320,11 @@ function validateAnswer(field: FormField, value: AnswerValue, answers: SessionAn
   if (field.type === 'email') {
     z.string().email().parse(value);
   }
+  if (field.type === 'date') {
+    if (typeof value !== 'string' || !z.string().date().safeParse(value).success) {
+      throw publicError('INVALID_INPUT', 'Expected a valid date (YYYY-MM-DD).', 400, field.id);
+    }
+  }
   if ((field.type === 'short_text' || field.type === 'long_text') && typeof value === 'string') {
     if (field.validation.min_length && value.length < field.validation.min_length) {
       throw publicError('INVALID_INPUT', `Must be at least ${field.validation.min_length} characters.`, 400, field.id);
