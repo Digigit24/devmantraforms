@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { publicError } from './errors';
 import { jsonError, jsonOk } from './http';
 import {
   completeSession,
@@ -40,30 +41,34 @@ const McpRequestSchema = z.discriminatedUnion('kind', [
 ]);
 
 export function mcpCapabilities(tenantSlug = 'demo') {
-  const tenant = getTenantBySlug(tenantSlug);
-  return jsonOk({
-    schema_version: '1.0',
-    tenant: {
-      id: tenant.id,
-      slug: tenant.slug,
-      name: tenant.name,
-      endpoint: tenant.mcp_endpoint,
-    },
-    resources: ['form://{formId}', 'session://{sessionId}', 'submission://{submissionId}'],
-    tools: [
-      'create_form',
-      'publish_form',
-      'start_session',
-      'get_next_step',
-      'submit_answer',
-      'upload_answer_artifact',
-      'pause_session',
-      'resume_session',
-      'complete_session',
-      'get_submission',
-      'request_human_review',
-    ],
-  });
+  try {
+    const tenant = getTenantBySlug(tenantSlug);
+    return jsonOk({
+      schema_version: '1.0',
+      tenant: {
+        id: tenant.id,
+        slug: tenant.slug,
+        name: tenant.name,
+        endpoint: tenant.mcp_endpoint,
+      },
+      resources: ['form://{formId}', 'session://{sessionId}', 'submission://{submissionId}'],
+      tools: [
+        'create_form',
+        'publish_form',
+        'start_session',
+        'get_next_step',
+        'submit_answer',
+        'upload_answer_artifact',
+        'pause_session',
+        'resume_session',
+        'complete_session',
+        'get_submission',
+        'request_human_review',
+      ],
+    });
+  } catch (error) {
+    return jsonError(error);
+  }
 }
 
 export async function handleMcpPost(request: Request, tenantSlug = 'demo') {
@@ -89,7 +94,7 @@ function readResource(uri: string, tenantId: string) {
   if (sessionMatch?.[1]) return getSession(sessionMatch[1]);
   const submissionMatch = uri.match(/^submission:\/\/([^/]+)$/);
   if (submissionMatch?.[1]) return getSubmission(submissionMatch[1]);
-  throw new Error('Unsupported resource URI.');
+  throw publicError('INVALID_INPUT', 'Unsupported resource URI.', 400);
 }
 
 async function callTool(name: string, args: Record<string, unknown>, tenantId: string) {
@@ -126,12 +131,14 @@ async function callTool(name: string, args: Record<string, unknown>, tenantId: s
       session_id: optionalStringArg(args, 'session_id'),
     };
   }
-  throw new Error('Unsupported MCP tool.');
+  throw publicError('INVALID_INPUT', 'Unsupported MCP tool.', 400);
 }
 
 function stringArg(args: Record<string, unknown>, key: string) {
   const value = args[key];
-  if (typeof value !== 'string' || value.length === 0) throw new Error(`${key} is required.`);
+  if (typeof value !== 'string' || value.length === 0) {
+    throw publicError('INVALID_INPUT', `${key} is required.`, 400, key);
+  }
   return value;
 }
 
@@ -142,7 +149,9 @@ function optionalStringArg(args: Record<string, unknown>, key: string) {
 
 function numberArg(args: Record<string, unknown>, key: string) {
   const value = args[key];
-  if (typeof value !== 'number') throw new Error(`${key} is required.`);
+  if (typeof value !== 'number') {
+    throw publicError('INVALID_INPUT', `${key} is required.`, 400, key);
+  }
   return value;
 }
 

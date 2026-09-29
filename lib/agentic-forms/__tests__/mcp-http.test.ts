@@ -204,10 +204,34 @@ describe('MCP request validation', () => {
     expect((await response.json()).error.code).toBe('INVALID_INPUT');
   });
 
-  // Documents current behavior: a missing string argument becomes a generic 500 instead of INVALID_INPUT.
-  it('currently returns a generic 500 when a required tool argument is missing', async () => {
+  it('returns 400 with the field id when a required string tool argument is missing', async () => {
     const result = await callTool('get_next_step', {});
-    expect(result.status).toBe(500);
-    expect(result.body.error.code).toBe('PROVIDER_UNAVAILABLE');
+    expect(result.status).toBe(400);
+    expect(result.body.error.code).toBe('INVALID_INPUT');
+    expect(result.body.error.field).toBe('session_id');
+  });
+
+  it('returns 400 with the field id when a required number tool argument is missing', async () => {
+    const result = await callTool('upload_answer_artifact', {
+      session_id: 'sess_any',
+      field_id: 'portfolio',
+      filename: 'cv.pdf',
+      content_type: 'application/pdf',
+    });
+    expect(result.status).toBe(400);
+    expect(result.body.error.code).toBe('INVALID_INPUT');
+    expect(result.body.error.field).toBe('size_bytes');
+  });
+
+  it('returns 400 for an unsupported resource URI scheme', async () => {
+    const response = await post({ kind: 'resource', uri: 'unknown://whatever' });
+    expect(response.status).toBe(400);
+    expect((await response.json()).error.code).toBe('INVALID_INPUT');
+  });
+
+  it('returns 404 for an unknown tenant on the GET capabilities endpoint', async () => {
+    const response = mcpCapabilities('nobody');
+    expect(response.status).toBe(404);
+    expect((await response.json()).error.code).toBe('NOT_FOUND');
   });
 });
