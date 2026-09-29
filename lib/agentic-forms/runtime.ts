@@ -190,7 +190,7 @@ export function submitAnswer(sessionId: string, input: unknown, source: SessionA
   if (!field) throw publicError('INVALID_INPUT', 'Unknown field id.', 400, 'field_id');
   if (!isVisible(field, session.answers)) throw publicError('INVALID_INPUT', 'Field is not currently visible.', 400, field.id);
 
-  validateAnswer(field, data.value, session.answers);
+  validateAnswer(field, data.value, session.answers, version.schema.fields);
   attachArtifactAnswerIfNeeded(session, field, data.value);
   const answer = createAnswer(field.id, data.value, source);
   const nextAnswers = [...session.answers.filter((item) => item.field_id !== field.id), answer];
@@ -267,6 +267,9 @@ export function getSubmission(submissionId: string): SubmissionRecord {
 function setSessionStatus(sessionId: string, status: SessionRecord['status'], eventType: SessionRecord['events'][number]['type']) {
   const store = getStore();
   const session = getSession(sessionId);
+  if (session.status === 'completed') {
+    throw publicError('SESSION_CONFLICT', 'Session is already completed.', 409);
+  }
   const next: SessionRecord = {
     ...session,
     status,
@@ -310,7 +313,7 @@ function isVisible(field: FormField, answers: SessionAnswer[]) {
   return Array.isArray(actual) && actual.includes(String(expected));
 }
 
-function validateAnswer(field: FormField, value: AnswerValue, answers: SessionAnswer[]) {
+function validateAnswer(field: FormField, value: AnswerValue, answers: SessionAnswer[], fields: FormField[]) {
   if (field.required && (value === '' || value === false || (Array.isArray(value) && value.length === 0))) {
     throw publicError('INVALID_INPUT', 'This field is required.', 400, field.id);
   }
@@ -334,8 +337,12 @@ function validateAnswer(field: FormField, value: AnswerValue, answers: SessionAn
     throw publicError('CONSENT_REQUIRED', 'Consent is required for this step.', 400, field.id);
   }
   if (field.type === 'video_response') {
-    const consentField = answers.find((answer) => answer.value === true);
-    if (!consentField) throw publicError('CONSENT_REQUIRED', 'Recording consent is required before video submission.', 400, field.id);
+    const consentFieldId = field.visible_if?.field_id;
+    const consentField = consentFieldId ? fields.find((candidate) => candidate.id === consentFieldId) : undefined;
+    const consentGiven =
+      consentField?.type === 'consent' &&
+      answers.some((answer) => answer.field_id === consentFieldId && answer.value === true);
+    if (!consentGiven) throw publicError('CONSENT_REQUIRED', 'Recording consent is required before video submission.', 400, field.id);
   }
 }
 

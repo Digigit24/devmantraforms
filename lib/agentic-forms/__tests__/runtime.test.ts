@@ -601,8 +601,7 @@ describe('known bugs (pending fixes)', () => {
   // so resumeSession() reopens a completed session and it accepts new answers again.
   // EXPECTED: 'completed' is final. Pause and resume on a completed session must fail with
   // SESSION_CONFLICT (409), and the session must stay 'completed'.
-  // Remove .skip when the state machine is fixed.
-  it.skip('does not allow a completed session to be resumed or paused', () => {
+  it('does not allow a completed session to be resumed or paused', () => {
     const { sessionId } = startBasicSession();
     answerRequiredBasicFields(sessionId);
     completeSession(sessionId);
@@ -622,8 +621,7 @@ describe('known bugs (pending fixes)', () => {
   // EXPECTED: a video answer is accepted only after the respondent has agreed to a consent
   // question that covers recording. A `true` answer to an unrelated question must not count,
   // so this submission must fail with CONSENT_REQUIRED (400).
-  // Remove .skip when the consent check is fixed.
-  it.skip('does not treat an unrelated true answer as recording consent', () => {
+  it('does not treat an unrelated true answer as recording consent', () => {
     const form = createPublishedForm({
       title: 'Video Without Recording Consent',
       fields: [
