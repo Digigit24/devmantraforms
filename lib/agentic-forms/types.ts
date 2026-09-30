@@ -109,6 +109,12 @@ export interface ArtifactUpload {
   };
 }
 
+// Response for the direct (server-side, multipart) upload path — the file is already in
+// storage by the time this is returned, so there's no upload.url for the caller to PUT to.
+export interface DirectArtifactUpload {
+  artifact: ArtifactRecord;
+}
+
 export interface SessionRecord {
   id: string;
   tenant_id: string;

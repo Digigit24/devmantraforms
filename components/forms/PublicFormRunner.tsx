@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import type { AnswerValue } from '@/lib/agentic-forms/schema';
-import type { ArtifactUpload, NextStepResponse, PublishedFormView, SubmissionRecord } from '@/lib/agentic-forms/types';
+import type { ArtifactRecord, NextStepResponse, PublishedFormView, SubmissionRecord } from '@/lib/agentic-forms/types';
 
 interface Props {
   form: PublishedFormView;
@@ -19,7 +19,7 @@ interface AnswerResponse {
 }
 
 interface ArtifactUploadResponse {
-  artifact_upload?: ArtifactUpload;
+  artifact?: ArtifactRecord;
   error?: { message?: string };
 }
 
@@ -115,42 +115,31 @@ export default function PublicFormRunner({ form }: Props) {
     if (fieldType === 'multi_select') return multiValue;
     if (fieldType === 'file_upload' || fieldType === 'video_response') {
       if (!nextStep || !selectedFile) throw new Error('Choose a file before submitting.');
-      const artifactUpload = await createAndUploadArtifact(nextStep.session_id, fieldId, selectedFile, fieldType);
+      const artifact = await uploadArtifact(nextStep.session_id, fieldId, selectedFile, fieldType);
       return {
-        artifact_id: artifactUpload.artifact.id,
-        filename: artifactUpload.artifact.filename,
-        content_type: artifactUpload.artifact.content_type,
-        size_bytes: artifactUpload.artifact.size_bytes,
-        ...(artifactUpload.artifact.duration_seconds ? { duration_seconds: artifactUpload.artifact.duration_seconds } : {}),
+        artifact_id: artifact.id,
+        filename: artifact.filename,
+        content_type: artifact.content_type,
+        size_bytes: artifact.size_bytes,
+        ...(artifact.duration_seconds ? { duration_seconds: artifact.duration_seconds } : {}),
       };
     }
     return value;
   }
 
-  async function createAndUploadArtifact(sessionId: string, fieldId: string, file: File, fieldType: string) {
-    const response = await fetch('/api/artifacts/upload', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        session_id: sessionId,
-        field_id: fieldId,
-        filename: file.name,
-        content_type: file.type || (fieldType === 'video_response' ? 'video/webm' : 'application/octet-stream'),
-        size_bytes: file.size,
-        ...(fieldType === 'video_response' ? { duration_seconds: 1 } : {}),
-      }),
-    });
+  async function uploadArtifact(sessionId: string, fieldId: string, file: File, fieldType: string) {
+    const body = new FormData();
+    body.append('file', file);
+    body.append('session_id', sessionId);
+    body.append('field_id', fieldId);
+    if (fieldType === 'video_response') body.append('duration_seconds', '1');
+
+    const response = await fetch('/api/artifacts/upload', { method: 'POST', body });
     const data = await response.json() as ArtifactUploadResponse;
-    if (!response.ok || !data.artifact_upload) {
-      throw new Error(data.error?.message ?? 'Could not create upload URL.');
+    if (!response.ok || !data.artifact) {
+      throw new Error(data.error?.message ?? 'Could not upload the file.');
     }
-    const uploadResponse = await fetch(data.artifact_upload.upload.url, {
-      method: data.artifact_upload.upload.method,
-      headers: data.artifact_upload.upload.headers,
-      body: file,
-    });
-    if (!uploadResponse.ok) throw new Error('Upload to storage failed.');
-    return data.artifact_upload;
+    return data.artifact;
   }
 
   return (
