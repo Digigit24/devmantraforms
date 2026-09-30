@@ -200,11 +200,9 @@ export default function PublicFormRunner({ form }: Props) {
 
           {submission && (
             <div>
-              <h2 className="font-heading text-2xl font-black">Submission received</h2>
+              <h2 className="font-heading text-2xl font-black">Thank you. Your response has been submitted successfully.</h2>
               <p className="mt-2 text-sm text-slate-600">Submission ID: {submission.id}</p>
-              <pre className="mt-5 overflow-auto rounded-md bg-slate-950 p-4 text-xs text-slate-50">
-                {JSON.stringify(submission.answers, null, 2)}
-              </pre>
+              <p className="mt-5 text-sm text-slate-500">You can now close this page.</p>
             </div>
           )}
 
