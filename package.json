@@ -6,13 +6,17 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test": "vitest run",
+    "celiyo:tenant:create": "tsx scripts/create-tenant.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1137.0",
     "@aws-sdk/s3-request-presigner": "^3.1137.0",
+    "@modelcontextprotocol/sdk": "^1.31.0",
     "@neondatabase/serverless": "^0.10.4",
     "@types/nodemailer": "^8.0.0",
+    "better-sqlite3": "^12.11.1",
     "framer-motion": "^12.9.4",
     "next": "^15.3.1",
     "nodemailer": "^8.0.7",
@@ -26,6 +30,7 @@
   },
   "devDependencies": {
     "@netlify/plugin-nextjs": "^5.15.9",
+    "@types/better-sqlite3": "^9.6.0",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
@@ -34,6 +39,8 @@
     "eslint-config-next": "^15.3.1",
     "postcss": "^8.4.38",
     "tailwindcss": "^3.4.1",
-    "typescript": "^5"
+    "tsx": "^4.23.15",
+    "typescript": "^5",
+    "vitest": "^4.1.11"
   }
 }

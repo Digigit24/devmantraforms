@@ -2,7 +2,7 @@ import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { CreateArtifactUploadInputSchema } from './schema';
 import { publicError } from './errors';
-import { createEvent, createId, getStore, now } from './store';
+import { createEvent, createId, getRepository, now } from './store';
 import type { ArtifactRecord, ArtifactUpload } from './types';
 
 const UPLOAD_EXPIRES_IN_SECONDS = 900;
@@ -17,11 +17,11 @@ interface StorageConfig {
   publicBaseUrl?: string;
 }
 
-export async function createArtifactUpload(input: unknown): Promise<ArtifactUpload> {
+export async function createArtifactUpload(input: unknown, tenantId?: string): Promise<ArtifactUpload> {
   const data = CreateArtifactUploadInputSchema.parse(input);
   const config = getStorageConfig();
-  const store = getStore();
-  const session = store.sessions.get(data.session_id);
+  const repo = getRepository();
+  const session = tenantId ? repo.getSessionForTenant(data.session_id, tenantId) : repo.getSession(data.session_id);
   if (!session) throw publicError('NOT_FOUND', 'Session was not found.', 404);
   const key = buildArtifactKey(session.form_id, data.session_id, data.field_id, data.filename);
   const artifact: ArtifactRecord = {
@@ -52,7 +52,7 @@ export async function createArtifactUpload(input: unknown): Promise<ArtifactUplo
     },
   });
   const uploadUrl = await getSignedUrl(createS3Client(config), command, { expiresIn: UPLOAD_EXPIRES_IN_SECONDS });
-  store.artifacts.set(artifact.id, artifact);
+  repo.saveArtifact(artifact);
   session.events.push(createEvent(session.id, 'artifact_upload_created', {
     field_id: data.field_id,
     filename: data.filename,
@@ -61,7 +61,7 @@ export async function createArtifactUpload(input: unknown): Promise<ArtifactUplo
     bucket: artifact.bucket,
     key: artifact.key,
   }));
-  store.sessions.set(session.id, { ...session, updated_at: now() });
+  repo.saveSession({ ...session, updated_at: now() });
 
   return {
     artifact,
@@ -74,17 +74,18 @@ export async function createArtifactUpload(input: unknown): Promise<ArtifactUplo
   };
 }
 
-export function getArtifact(artifactId: string): ArtifactRecord {
-  const artifact = getStore().artifacts.get(artifactId);
+export function getArtifact(artifactId: string, tenantId?: string): ArtifactRecord {
+  const repo = getRepository();
+  const artifact = tenantId ? repo.getArtifactForTenant(artifactId, tenantId) : repo.getArtifact(artifactId);
   if (!artifact) throw publicError('NOT_FOUND', 'Artifact was not found.', 404);
   return artifact;
 }
 
 export function markArtifactAttached(artifactId: string) {
-  const store = getStore();
+  const repo = getRepository();
   const artifact = getArtifact(artifactId);
   const next: ArtifactRecord = { ...artifact, status: 'attached' };
-  store.artifacts.set(artifactId, next);
+  repo.saveArtifact(next);
   return next;
 }
 

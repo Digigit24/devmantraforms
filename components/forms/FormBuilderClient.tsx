@@ -46,7 +46,11 @@ interface FormResponse {
   form: PublishedFormView;
 }
 
-export default function FormBuilderClient() {
+interface FormBuilderClientProps {
+  tenantSlug: string;
+}
+
+export default function FormBuilderClient({ tenantSlug }: FormBuilderClientProps) {
   const [forms, setForms] = useState<PublishedFormView[]>([]);
   const [json, setJson] = useState(JSON.stringify(starterForm, null, 2));
   const [selectedId, setSelectedId] = useState<string>('sample-hiring');
@@ -55,10 +59,11 @@ export default function FormBuilderClient() {
 
   useEffect(() => {
     void refreshForms();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tenantSlug]);
 
   async function refreshForms() {
-    const response = await fetch('/api/forms');
+    const response = await fetch(`/api/forms?tenant=${tenantSlug}`);
     const data = await response.json() as FormsResponse;
     setForms(data.forms);
     if (!selectedId && data.forms[0]) setSelectedId(data.forms[0].id);
@@ -67,7 +72,7 @@ export default function FormBuilderClient() {
   async function createFromJson() {
     setMessage(null);
     const payload = JSON.parse(json) as unknown;
-    const response = await fetch('/api/forms', {
+    const response = await fetch(`/api/forms?tenant=${tenantSlug}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
@@ -81,7 +86,7 @@ export default function FormBuilderClient() {
 
   async function publish(formId: string) {
     setMessage(null);
-    const response = await fetch(`/api/forms/${formId}/publish`, { method: 'POST' });
+    const response = await fetch(`/api/forms/${formId}/publish?tenant=${tenantSlug}`, { method: 'POST' });
     const data = await response.json() as FormResponse;
     if (!response.ok) throw new Error(JSON.stringify(data));
     setSelectedId(data.form.id);
@@ -146,8 +151,8 @@ export default function FormBuilderClient() {
               <div className="mt-5 grid gap-3 md:grid-cols-3">
                 <Stat label="Status" value={selected.status} />
                 <Stat label="Fields" value={String(selected.draft.fields.length)} />
-                <Stat label="MCP endpoint" value="/api/mcp/demo" />
-                <Stat label="MCP resource" value={`form://${selected.id}`} />
+                <Stat label="MCP endpoint" value="/api/mcp" />
+                <Stat label="Form ID" value={selected.id} />
               </div>
             )}
           </div>
@@ -173,19 +178,16 @@ export default function FormBuilderClient() {
             </div>
 
             <div className="rounded-lg border border-slate-200 bg-white p-5">
-              <h3 className="font-heading text-lg font-black">MCP quick call</h3>
+              <h3 className="font-heading text-lg font-black">Connect an agent</h3>
               <pre className="mt-4 overflow-auto rounded-md bg-slate-950 p-4 text-xs leading-5 text-slate-50">
-{`POST /api/mcp/demo
-{
-  "kind": "tool",
-  "name": "start_session",
-  "arguments": {
-    "form_id": "${selected?.id ?? 'sample-hiring'}"
-  }
-}`}
+{`POST /api/mcp
+Authorization: Bearer <tenant-api-key>
+
+MCP tools/call "start_session"
+{ "form_id": "${selected?.id ?? 'sample-hiring'}" }`}
               </pre>
               <p className="mt-4 text-sm text-slate-600">
-                Each workspace gets its own MCP endpoint. The demo workspace is available at /api/mcp/demo.
+                See the MCP settings page for this tenant&apos;s endpoint and API key.
               </p>
             </div>
           </div>

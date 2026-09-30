@@ -6,9 +6,12 @@ import type {
   SessionAnswer,
   SessionRecord,
   SubmissionRecord,
+  TenantApiKeyRecord,
   TenantRecord,
 } from './types';
 import type { FormSchemaDefinition } from './schema';
+import type { AgenticFormsRepository } from './repository';
+import { createSqliteRepository, type SqliteRepositoryHandle } from './sqlite-repository';
 
 interface StoreState {
   forms: Map<string, FormRecord>;
@@ -17,11 +20,14 @@ interface StoreState {
   sessions: Map<string, SessionRecord>;
   submissions: Map<string, SubmissionRecord>;
   artifacts: Map<string, ArtifactRecord>;
+  apiKeys: Map<string, TenantApiKeyRecord>;
 }
 
 declare global {
   // eslint-disable-next-line no-var
   var __agenticFormsStore: StoreState | undefined;
+  // eslint-disable-next-line no-var
+  var __agenticFormsSqliteRepository: SqliteRepositoryHandle | undefined;
 }
 
 const sampleHiringForm: FormSchemaDefinition = {
@@ -100,6 +106,7 @@ function createSeedStore(): StoreState {
   const sessions = new Map<string, SessionRecord>();
   const submissions = new Map<string, SubmissionRecord>();
   const artifacts = new Map<string, ArtifactRecord>();
+  const apiKeys = new Map<string, TenantApiKeyRecord>();
 
   const formId = 'sample-hiring';
   const tenantId = 'tenant_demo';
@@ -136,12 +143,113 @@ function createSeedStore(): StoreState {
     created_at: createdAt,
   });
 
-  return { tenants, forms, versions, sessions, submissions, artifacts };
+  return { tenants, forms, versions, sessions, submissions, artifacts, apiKeys };
 }
 
 export function getStore(): StoreState {
   globalThis.__agenticFormsStore ??= createSeedStore();
   return globalThis.__agenticFormsStore;
+}
+
+// The only persistence implementation today. Wraps the same singleton StoreState
+// getStore() returns, so getRepository() always reflects the current store —
+// including after resetStore() clears it between tests — and doesn't cache
+// anything across calls.
+function createInMemoryRepository(state: StoreState): AgenticFormsRepository {
+  return {
+    listTenants: () => [...state.tenants.values()],
+    getTenantBySlug: (slug) => [...state.tenants.values()].find((tenant) => tenant.slug === slug),
+    getTenantById: (tenantId) => state.tenants.get(tenantId),
+    saveTenant: (tenant) => {
+      state.tenants.set(tenant.id, tenant);
+    },
+
+    listFormsByTenant: (tenantId) => [...state.forms.values()].filter((form) => form.tenant_id === tenantId),
+    getForm: (formId) => state.forms.get(formId),
+    getFormForTenant: (formId, tenantId) => {
+      const form = state.forms.get(formId);
+      return form && form.tenant_id === tenantId ? form : undefined;
+    },
+    saveForm: (form) => {
+      state.forms.set(form.id, form);
+    },
+
+    listVersionsByForm: (formId) => [...state.versions.values()].filter((version) => version.form_id === formId),
+    getVersion: (versionId) => state.versions.get(versionId),
+    saveVersion: (version) => {
+      state.versions.set(version.id, version);
+    },
+
+    getSession: (sessionId) => state.sessions.get(sessionId),
+    getSessionForTenant: (sessionId, tenantId) => {
+      const session = state.sessions.get(sessionId);
+      return session && session.tenant_id === tenantId ? session : undefined;
+    },
+    saveSession: (session) => {
+      state.sessions.set(session.id, session);
+    },
+
+    getSubmission: (submissionId) => state.submissions.get(submissionId),
+    getSubmissionForTenant: (submissionId, tenantId) => {
+      const submission = state.submissions.get(submissionId);
+      return submission && submission.tenant_id === tenantId ? submission : undefined;
+    },
+    findSubmissionBySession: (sessionId) =>
+      [...state.submissions.values()].find((submission) => submission.session_id === sessionId),
+    listSubmissionsByForm: (formId, tenantId) =>
+      [...state.submissions.values()].filter(
+        (submission) => submission.form_id === formId && submission.tenant_id === tenantId,
+      ),
+    saveSubmission: (submission) => {
+      state.submissions.set(submission.id, submission);
+    },
+
+    getArtifact: (artifactId) => state.artifacts.get(artifactId),
+    getArtifactForTenant: (artifactId, tenantId) => {
+      const artifact = state.artifacts.get(artifactId);
+      return artifact && artifact.tenant_id === tenantId ? artifact : undefined;
+    },
+    saveArtifact: (artifact) => {
+      state.artifacts.set(artifact.id, artifact);
+    },
+
+    saveApiKey: (apiKey) => {
+      state.apiKeys.set(apiKey.id, apiKey);
+    },
+    findActiveApiKeyByHash: (keyHash) =>
+      [...state.apiKeys.values()].find((key) => key.key_hash === keyHash && !key.revoked_at),
+    listApiKeysByTenant: (tenantId) => [...state.apiKeys.values()].filter((key) => key.tenant_id === tenantId),
+    revokeApiKey: (apiKeyId) => {
+      const key = state.apiKeys.get(apiKeyId);
+      if (key && !key.revoked_at) {
+        state.apiKeys.set(apiKeyId, { ...key, revoked_at: now() });
+      }
+    },
+    touchApiKeyLastUsed: (apiKeyId, timestamp) => {
+      const key = state.apiKeys.get(apiKeyId);
+      if (key) {
+        state.apiKeys.set(apiKeyId, { ...key, last_used_at: timestamp });
+      }
+    },
+  };
+}
+
+// Production selection: a configured CELIYO_DATABASE_PATH means every restart keeps its
+// data; leaving it unset preserves today's in-memory behavior exactly, which is what the
+// existing test suite and local `next dev` continue to get unless someone explicitly opts
+// in. The SQLite handle is cached on globalThis (like __agenticFormsStore) so Next.js dev
+// hot-reload doesn't reopen the database file on every edit.
+function getSqliteRepository(databasePath: string): AgenticFormsRepository {
+  globalThis.__agenticFormsSqliteRepository ??= createSqliteRepository(databasePath, { seed: true });
+  return globalThis.__agenticFormsSqliteRepository;
+}
+
+export function getRepository(): AgenticFormsRepository {
+  const databasePath = process.env.CELIYO_DATABASE_PATH;
+  if (databasePath) {
+    return getSqliteRepository(databasePath);
+  }
+  return createInMemoryRepository(getStore());
 }
 
 export function createId(prefix: string) {

@@ -37,6 +37,20 @@ export interface TenantRecord {
   created_at: string;
 }
 
+// A tenant's MCP API key. Only key_hash (a SHA-256 digest) is ever persisted or compared —
+// the plaintext key exists only at generation time, returned once to the caller and never
+// stored. key_prefix/key_hint are safe-to-display metadata (e.g. "cfmcp_...ab12").
+export interface TenantApiKeyRecord {
+  id: string;
+  tenant_id: string;
+  key_prefix: string;
+  key_hint: string;
+  key_hash: string;
+  created_at: string;
+  revoked_at?: string;
+  last_used_at?: string;
+}
+
 export interface FormVersionRecord {
   id: string;
   form_id: string;

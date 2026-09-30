@@ -46,6 +46,59 @@ export const FormFieldSchema = z.object({
   visible_if: VisibilityConditionSchema.optional(),
 });
 
+// Cross-field rules that cannot be expressed on a single FormFieldSchema in isolation:
+// unique field ids, visible_if targets that resolve to a real sibling field, and
+// single_select/multi_select fields that declare usable, non-duplicated options.
+const FormFieldListSchema = z.array(FormFieldSchema).min(1).superRefine((fields, ctx) => {
+  const seenIds = new Set<string>();
+  for (const [index, field] of fields.entries()) {
+    if (seenIds.has(field.id)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: `Duplicate field id "${field.id}". Field ids must be unique within a form.`,
+        path: [index, 'id'],
+      });
+    } else {
+      seenIds.add(field.id);
+    }
+  }
+
+  const knownIds = new Set(fields.map((field) => field.id));
+  for (const [index, field] of fields.entries()) {
+    if (field.visible_if && !knownIds.has(field.visible_if.field_id)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: `Field "${field.id}" has visible_if.field_id "${field.visible_if.field_id}", which does not match any field in this form.`,
+        path: [index, 'visible_if', 'field_id'],
+      });
+    }
+  }
+
+  for (const [index, field] of fields.entries()) {
+    if (field.type !== 'single_select' && field.type !== 'multi_select') continue;
+    if (!field.options || field.options.length === 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: `Field "${field.id}" is a ${field.type} field and requires a non-empty "options" array.`,
+        path: [index, 'options'],
+      });
+      continue;
+    }
+    const seenValues = new Set<string>();
+    for (const [optionIndex, option] of field.options.entries()) {
+      if (seenValues.has(option.value)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `Field "${field.id}" has duplicate option value "${option.value}".`,
+          path: [index, 'options', optionIndex, 'value'],
+        });
+      } else {
+        seenValues.add(option.value);
+      }
+    }
+  }
+});
+
 export const FormPolicySchema = z.object({
   agent_can_ask_followups: z.boolean().default(false),
   requires_human_review: z.boolean().default(false),
@@ -62,7 +115,7 @@ export const FormPolicySchema = z.object({
 export const FormSchemaDefinitionSchema = z.object({
   title: z.string().min(1),
   description: z.string().optional(),
-  fields: z.array(FormFieldSchema).min(1),
+  fields: FormFieldListSchema,
   policy: FormPolicySchema.default({}),
 });
 
@@ -71,7 +124,7 @@ export const CreateFormInputSchema = FormSchemaDefinitionSchema.extend({
 });
 
 export const UpdateFormInputSchema = FormSchemaDefinitionSchema.partial().extend({
-  fields: z.array(FormFieldSchema).min(1).optional(),
+  fields: FormFieldListSchema.optional(),
 });
 
 export const AnswerValueSchema = z.union([

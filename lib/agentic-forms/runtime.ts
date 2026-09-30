@@ -9,7 +9,7 @@ import {
   type FormSchemaDefinition,
 } from './schema';
 import { AgenticFormError, publicError } from './errors';
-import { createAnswer, createEvent, createId, getDefaultTenantId, getStore, now } from './store';
+import { createAnswer, createEvent, createId, getDefaultTenantId, getRepository, now } from './store';
 import { getArtifact, markArtifactAttached } from './storage';
 import type {
   FormRecord,
@@ -23,25 +23,36 @@ import type {
 } from './types';
 
 export function listTenants(): TenantRecord[] {
-  return [...getStore().tenants.values()];
+  return getRepository().listTenants();
 }
 
 export function getTenantBySlug(slug: string): TenantRecord {
-  const tenant = [...getStore().tenants.values()].find((candidate) => candidate.slug === slug);
+  const tenant = getRepository().getTenantBySlug(slug);
   if (!tenant) throw publicError('NOT_FOUND', 'Tenant was not found.', 404);
   return tenant;
 }
 
+// Shared tenant-selection rule for the human admin UI/API (not MCP, which always resolves
+// tenant from the authenticated API key). Explicit slug wins; otherwise falls back to the
+// first tenant, matching today's implicit single-tenant behavior for the common case.
+// Centralized here so /dashboard, /forms, /responses/*, and their API routes all resolve
+// "the current admin tenant" the exact same way instead of duplicating the rule.
+export function resolveAdminTenant(slug?: string | null): TenantRecord {
+  if (slug) return getTenantBySlug(slug);
+  const [first] = listTenants();
+  if (!first) throw publicError('NOT_FOUND', 'No tenant exists yet.', 404);
+  return first;
+}
+
 export function listForms(tenantId = getDefaultTenantId()): PublishedFormView[] {
-  const store = getStore();
-  return [...store.forms.values()]
-    .filter((form) => form.tenant_id === tenantId)
+  return getRepository()
+    .listFormsByTenant(tenantId)
     .map((form) => toPublishedView(form));
 }
 
 export function createForm(input: unknown, tenantId = getDefaultTenantId()): PublishedFormView {
   const data = CreateFormInputSchema.parse(input);
-  const store = getStore();
+  const repo = getRepository();
   const timestamp = now();
   const form: FormRecord = {
     id: createId('form'),
@@ -58,34 +69,33 @@ export function createForm(input: unknown, tenantId = getDefaultTenantId()): Pub
     created_at: timestamp,
     updated_at: timestamp,
   };
-  store.forms.set(form.id, form);
+  repo.saveForm(form);
   return toPublishedView(form);
 }
 
 export function getForm(formId: string, tenantId?: string): PublishedFormView {
-  const form = getStore().forms.get(formId);
+  const repo = getRepository();
+  const form = tenantId ? repo.getFormForTenant(formId, tenantId) : repo.getForm(formId);
   if (!form) throw publicError('NOT_FOUND', 'Form was not found.', 404);
-  if (tenantId && form.tenant_id !== tenantId) throw publicError('NOT_FOUND', 'Form was not found.', 404);
   return toPublishedView(form);
 }
 
-export function updateForm(formId: string, input: unknown): PublishedFormView {
+export function updateForm(formId: string, input: unknown, tenantId?: string): PublishedFormView {
   const patch = UpdateFormInputSchema.parse(input);
-  const store = getStore();
-  const form = store.forms.get(formId);
+  const repo = getRepository();
+  const form = tenantId ? repo.getFormForTenant(formId, tenantId) : repo.getForm(formId);
   if (!form) throw publicError('NOT_FOUND', 'Form was not found.', 404);
   const draft = FormSchemaDefinitionSchema.parse({ ...form.draft, ...patch });
   const next: FormRecord = { ...form, draft, updated_at: now() };
-  store.forms.set(formId, next);
+  repo.saveForm(next);
   return toPublishedView(next);
 }
 
 export function publishForm(formId: string, tenantId?: string): PublishedFormView {
-  const store = getStore();
-  const form = store.forms.get(formId);
+  const repo = getRepository();
+  const form = tenantId ? repo.getFormForTenant(formId, tenantId) : repo.getForm(formId);
   if (!form) throw publicError('NOT_FOUND', 'Form was not found.', 404);
-  if (tenantId && form.tenant_id !== tenantId) throw publicError('NOT_FOUND', 'Form was not found.', 404);
-  const existingVersions = [...store.versions.values()].filter((version) => version.form_id === formId);
+  const existingVersions = repo.listVersionsByForm(formId);
   const version: FormVersionRecord = {
     id: createId('fv'),
     form_id: formId,
@@ -100,16 +110,15 @@ export function publishForm(formId: string, tenantId?: string): PublishedFormVie
     current_version_id: version.id,
     updated_at: now(),
   };
-  store.versions.set(version.id, version);
-  store.forms.set(formId, next);
+  repo.saveVersion(version);
+  repo.saveForm(next);
   return toPublishedView(next);
 }
 
 export function startSession(formId: string, respondentId?: string, tenantId?: string): NextStepResponse {
-  const store = getStore();
-  const form = store.forms.get(formId);
+  const repo = getRepository();
+  const form = tenantId ? repo.getFormForTenant(formId, tenantId) : repo.getForm(formId);
   if (!form) throw publicError('NOT_FOUND', 'Form was not found.', 404);
-  if (tenantId && form.tenant_id !== tenantId) throw publicError('NOT_FOUND', 'Form was not found.', 404);
   if (form.status !== 'published' || !form.current_version_id) {
     throw publicError('FORM_NOT_PUBLISHED', 'Form is not published yet.', 409);
   }
@@ -128,18 +137,19 @@ export function startSession(formId: string, respondentId?: string, tenantId?: s
     updated_at: now(),
   };
   session.events.push(createEvent(sessionId, 'session_started', { form_id: formId }, { form_version_id: version.id }));
-  store.sessions.set(sessionId, session);
+  repo.saveSession(session);
   return getNextStep(sessionId);
 }
 
-export function getSession(sessionId: string): SessionRecord {
-  const session = getStore().sessions.get(sessionId);
+export function getSession(sessionId: string, tenantId?: string): SessionRecord {
+  const repo = getRepository();
+  const session = tenantId ? repo.getSessionForTenant(sessionId, tenantId) : repo.getSession(sessionId);
   if (!session) throw publicError('NOT_FOUND', 'Session was not found.', 404);
   return session;
 }
 
-export function getNextStep(sessionId: string): NextStepResponse {
-  const session = getSession(sessionId);
+export function getNextStep(sessionId: string, tenantId?: string): NextStepResponse {
+  const session = getSession(sessionId, tenantId);
   const version = getVersion(session.form_version_id);
   const nextField = version.schema.fields.find((field) => isVisible(field, session.answers) && !hasAnswer(session.answers, field.id));
   const allowed = version.schema.policy.allowed_answer_modes;
@@ -172,17 +182,22 @@ export function getNextStep(sessionId: string): NextStepResponse {
   };
 }
 
-export function submitAnswer(sessionId: string, input: unknown, source: SessionAnswer['source'] = 'human'): NextStepResponse {
+export function submitAnswer(
+  sessionId: string,
+  input: unknown,
+  source: SessionAnswer['source'] = 'human',
+  tenantId?: string,
+): NextStepResponse {
   const data = SubmitAnswerInputSchema.parse(input);
-  const store = getStore();
-  const session = getSession(sessionId);
+  const repo = getRepository();
+  const session = getSession(sessionId, tenantId);
   if (session.status !== 'awaiting_answer') {
     throw publicError('SESSION_CONFLICT', 'Session is not awaiting an answer.', 409);
   }
 
   if (data.idempotency_key) {
     const repeated = session.events.find((event) => event.input?.idempotency_key === data.idempotency_key);
-    if (repeated) return getNextStep(sessionId);
+    if (repeated) return getNextStep(sessionId, tenantId);
   }
 
   const version = getVersion(session.form_version_id);
@@ -190,7 +205,7 @@ export function submitAnswer(sessionId: string, input: unknown, source: SessionA
   if (!field) throw publicError('INVALID_INPUT', 'Unknown field id.', 400, 'field_id');
   if (!isVisible(field, session.answers)) throw publicError('INVALID_INPUT', 'Field is not currently visible.', 400, field.id);
 
-  validateAnswer(field, data.value, session.answers);
+  validateAnswer(field, data.value, session.answers, version.schema.fields);
   attachArtifactAnswerIfNeeded(session, field, data.value);
   const answer = createAnswer(field.id, data.value, source);
   const nextAnswers = [...session.answers.filter((item) => item.field_id !== field.id), answer];
@@ -204,21 +219,21 @@ export function submitAnswer(sessionId: string, input: unknown, source: SessionA
     ],
   };
 
-  store.sessions.set(session.id, nextSession);
-  return getNextStep(sessionId);
+  repo.saveSession(nextSession);
+  return getNextStep(sessionId, tenantId);
 }
 
-export function pauseSession(sessionId: string) {
-  return setSessionStatus(sessionId, 'paused', 'session_paused');
+export function pauseSession(sessionId: string, tenantId?: string) {
+  return setSessionStatus(sessionId, 'paused', 'session_paused', tenantId);
 }
 
-export function resumeSession(sessionId: string) {
-  return setSessionStatus(sessionId, 'awaiting_answer', 'session_resumed');
+export function resumeSession(sessionId: string, tenantId?: string) {
+  return setSessionStatus(sessionId, 'awaiting_answer', 'session_resumed', tenantId);
 }
 
-export function completeSession(sessionId: string): SubmissionRecord {
-  const store = getStore();
-  const session = getSession(sessionId);
+export function completeSession(sessionId: string, tenantId?: string): SubmissionRecord {
+  const repo = getRepository();
+  const session = getSession(sessionId, tenantId);
   const version = getVersion(session.form_version_id);
   const missingRequired = version.schema.fields.filter((field) => {
     return field.required && isVisible(field, session.answers) && !hasAnswer(session.answers, field.id);
@@ -240,7 +255,7 @@ export function completeSession(sessionId: string): SubmissionRecord {
     completed_at: timestamp,
     events: [...session.events, createEvent(session.id, 'session_completed')],
   };
-  const existing = [...store.submissions.values()].find((submission) => submission.session_id === sessionId);
+  const existing = repo.findSubmissionBySession(sessionId);
   if (existing) return existing;
 
   const submission: SubmissionRecord = {
@@ -253,38 +268,56 @@ export function completeSession(sessionId: string): SubmissionRecord {
     created_at: timestamp,
   };
 
-  store.sessions.set(sessionId, nextSession);
-  store.submissions.set(submission.id, submission);
+  repo.saveSession(nextSession);
+  repo.saveSubmission(submission);
   return submission;
 }
 
-export function getSubmission(submissionId: string): SubmissionRecord {
-  const submission = getStore().submissions.get(submissionId);
+export function getSubmission(submissionId: string, tenantId?: string): SubmissionRecord {
+  const repo = getRepository();
+  const submission = tenantId ? repo.getSubmissionForTenant(submissionId, tenantId) : repo.getSubmission(submissionId);
   if (!submission) throw publicError('NOT_FOUND', 'Submission was not found.', 404);
   return submission;
 }
 
-function setSessionStatus(sessionId: string, status: SessionRecord['status'], eventType: SessionRecord['events'][number]['type']) {
-  const store = getStore();
-  const session = getSession(sessionId);
+// Submissions are never exposed to an unauthenticated caller — tenantId is required, not
+// optional, unlike getForm/getSession which also serve the public respondent flow.
+export function listSubmissions(formId: string, tenantId: string): SubmissionRecord[] {
+  const repo = getRepository();
+  const form = repo.getFormForTenant(formId, tenantId);
+  if (!form) throw publicError('NOT_FOUND', 'Form was not found.', 404);
+  return repo.listSubmissionsByForm(formId, tenantId);
+}
+
+function setSessionStatus(
+  sessionId: string,
+  status: SessionRecord['status'],
+  eventType: SessionRecord['events'][number]['type'],
+  tenantId?: string,
+) {
+  const repo = getRepository();
+  const session = getSession(sessionId, tenantId);
+  if (session.status === 'completed') {
+    throw publicError('SESSION_CONFLICT', 'Session is already completed.', 409);
+  }
   const next: SessionRecord = {
     ...session,
     status,
     updated_at: now(),
     events: [...session.events, createEvent(session.id, eventType)],
   };
-  store.sessions.set(session.id, next);
-  return getNextStep(sessionId);
+  repo.saveSession(next);
+  return getNextStep(sessionId, tenantId);
 }
 
-function getVersion(versionId: string): FormVersionRecord {
-  const version = getStore().versions.get(versionId);
+export function getVersion(versionId: string): FormVersionRecord {
+  const version = getRepository().getVersion(versionId);
   if (!version) throw publicError('NOT_FOUND', 'Form version was not found.', 404);
   return version;
 }
 
 function toPublishedView(form: FormRecord): PublishedFormView {
-  const currentVersion = form.current_version_id ? getStore().versions.get(form.current_version_id) ?? null : null;
+  const currentVersion = form.current_version_id ? getRepository().getVersion(form.current_version_id) ?? null : null;
   return {
     id: form.id,
     tenant_id: form.tenant_id,
@@ -310,12 +343,17 @@ function isVisible(field: FormField, answers: SessionAnswer[]) {
   return Array.isArray(actual) && actual.includes(String(expected));
 }
 
-function validateAnswer(field: FormField, value: AnswerValue, answers: SessionAnswer[]) {
+function validateAnswer(field: FormField, value: AnswerValue, answers: SessionAnswer[], fields: FormField[]) {
   if (field.required && (value === '' || value === false || (Array.isArray(value) && value.length === 0))) {
     throw publicError('INVALID_INPUT', 'This field is required.', 400, field.id);
   }
   if (field.type === 'email') {
     z.string().email().parse(value);
+  }
+  if (field.type === 'date') {
+    if (typeof value !== 'string' || !z.string().date().safeParse(value).success) {
+      throw publicError('INVALID_INPUT', 'Expected a valid date (YYYY-MM-DD).', 400, field.id);
+    }
   }
   if ((field.type === 'short_text' || field.type === 'long_text') && typeof value === 'string') {
     if (field.validation.min_length && value.length < field.validation.min_length) {
@@ -325,8 +363,27 @@ function validateAnswer(field: FormField, value: AnswerValue, answers: SessionAn
       throw publicError('INVALID_INPUT', `Must be no more than ${field.validation.max_length} characters.`, 400, field.id);
     }
   }
-  if (field.type === 'number' && typeof value !== 'number') {
-    throw publicError('INVALID_INPUT', 'Expected a number.', 400, field.id);
+  if (field.type === 'number' && (field.required || value !== '')) {
+    if (typeof value !== 'number') {
+      throw publicError('INVALID_INPUT', 'Expected a number.', 400, field.id);
+    }
+    if (field.validation.min !== undefined && value < field.validation.min) {
+      throw publicError('INVALID_INPUT', `Must be at least ${field.validation.min}.`, 400, field.id);
+    }
+    if (field.validation.max !== undefined && value > field.validation.max) {
+      throw publicError('INVALID_INPUT', `Must be no more than ${field.validation.max}.`, 400, field.id);
+    }
+  }
+  if (field.type === 'rating' && (field.required || value !== '')) {
+    if (typeof value !== 'number') {
+      throw publicError('INVALID_INPUT', 'Expected a number.', 400, field.id);
+    }
+    if (field.validation.min !== undefined && value < field.validation.min) {
+      throw publicError('INVALID_INPUT', `Must be at least ${field.validation.min}.`, 400, field.id);
+    }
+    if (field.validation.max !== undefined && value > field.validation.max) {
+      throw publicError('INVALID_INPUT', `Must be no more than ${field.validation.max}.`, 400, field.id);
+    }
   }
   if (field.type === 'single_select') validateChoice(field, value);
   if (field.type === 'multi_select') validateMultiChoice(field, value);
@@ -334,8 +391,12 @@ function validateAnswer(field: FormField, value: AnswerValue, answers: SessionAn
     throw publicError('CONSENT_REQUIRED', 'Consent is required for this step.', 400, field.id);
   }
   if (field.type === 'video_response') {
-    const consentField = answers.find((answer) => answer.value === true);
-    if (!consentField) throw publicError('CONSENT_REQUIRED', 'Recording consent is required before video submission.', 400, field.id);
+    const consentFieldId = field.visible_if?.field_id;
+    const consentField = consentFieldId ? fields.find((candidate) => candidate.id === consentFieldId) : undefined;
+    const consentGiven =
+      consentField?.type === 'consent' &&
+      answers.some((answer) => answer.field_id === consentFieldId && answer.value === true);
+    if (!consentGiven) throw publicError('CONSENT_REQUIRED', 'Recording consent is required before video submission.', 400, field.id);
   }
 }
 

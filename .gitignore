@@ -23,3 +23,11 @@ Thumbs.db
 
 # TypeScript build cache
 tsconfig.tsbuildinfo
+
+# CeliyoForms SQLite database (see .env.example CELIYO_DATABASE_PATH) and its
+# WAL-mode sidecar files — never commit local or production data.
+*.sqlite
+*.sqlite3
+*.sqlite-wal
+*.sqlite-shm
+*.db
