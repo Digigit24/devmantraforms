@@ -192,6 +192,19 @@ export async function uploadArtifactDirect(input: UploadArtifactDirectInput, ten
   const buffer = Buffer.from(await file.arrayBuffer());
   const artifactId = createId('art');
 
+  // TEMPORARY diagnostics — remove once the production Zata PutObject failure is root
+  // caused. Logs request context and the real SDK error shape to PM2 logs; never logs
+  // credentials, signed headers, or file contents.
+  console.info('[uploadArtifactDirect] request', {
+    bucket: config.bucket,
+    endpoint: config.endpoint,
+    region: config.region,
+    forcePathStyle: config.forcePathStyle,
+    key,
+    contentType,
+    sizeBytes: buffer.byteLength,
+  });
+
   // Only persist the artifact once the upload to Zata has actually succeeded — a
   // partial/failed PutObject must never leave a misleading "uploaded" row behind.
   try {
@@ -201,13 +214,24 @@ export async function uploadArtifactDirect(input: UploadArtifactDirectInput, ten
       Body: buffer,
       ContentType: contentType,
       ContentLength: buffer.byteLength,
-      Metadata: {
-        artifact_id: artifactId,
-        session_id,
-        field_id,
-      },
     }));
-  } catch {
+  } catch (error) {
+    // TEMPORARY diagnostics — see comment above.
+    const err = error as {
+      name?: string;
+      message?: string;
+      Code?: string;
+      code?: string;
+      $metadata?: { httpStatusCode?: number; requestId?: string; extendedRequestId?: string };
+    };
+    console.error('[uploadArtifactDirect] S3 PutObject failed', {
+      name: err?.name,
+      message: err?.message,
+      code: err?.Code ?? err?.code,
+      httpStatusCode: err?.$metadata?.httpStatusCode,
+      requestId: err?.$metadata?.requestId,
+      extendedRequestId: err?.$metadata?.extendedRequestId,
+    });
     throw publicError('PROVIDER_UNAVAILABLE', 'Failed to upload the file to storage. Please try again.', 502, field_id);
   }
 
