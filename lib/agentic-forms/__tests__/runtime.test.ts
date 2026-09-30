@@ -516,10 +516,21 @@ describe('submitAnswer: invalid answers', () => {
     expectPublicError(() => submitAnswer(sessionId, { field_id: 'name', value: '' }), 'INVALID_INPUT', 400);
   });
 
-  it('rejects a malformed email', () => {
+  it('rejects a malformed email with a field-scoped error, not a raw ZodError', () => {
     const { sessionId } = startBasicSession();
-    expect(() => submitAnswer(sessionId, { field_id: 'email', value: 'not-an-email' })).toThrow(ZodError);
+    expectPublicError(() => submitAnswer(sessionId, { field_id: 'email', value: 'not-an-email' }), 'INVALID_INPUT', 400);
     expect(getSession(sessionId).answers).toEqual([]);
+  });
+
+  it('trims incidental whitespace from an email before validating and storing it', () => {
+    const { sessionId } = startBasicSession();
+    submitAnswer(sessionId, { field_id: 'email', value: '  aarav@example.com  ' });
+    expect(getSession(sessionId).answers.find((answer) => answer.field_id === 'email')?.value).toBe('aarav@example.com');
+  });
+
+  it('still rejects a malformed email after trimming whitespace', () => {
+    const { sessionId } = startBasicSession();
+    expectPublicError(() => submitAnswer(sessionId, { field_id: 'email', value: '  not-an-email  ' }), 'INVALID_INPUT', 400);
   });
 
   describe('date field', () => {

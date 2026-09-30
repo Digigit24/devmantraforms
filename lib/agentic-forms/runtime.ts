@@ -205,6 +205,9 @@ export function submitAnswer(
   if (!field) throw publicError('INVALID_INPUT', 'Unknown field id.', 400, 'field_id');
   if (!isVisible(field, session.answers)) throw publicError('INVALID_INPUT', 'Field is not currently visible.', 400, field.id);
 
+  if (field.type === 'email' && typeof data.value === 'string') {
+    data.value = data.value.trim();
+  }
   validateAnswer(field, data.value, session.answers, version.schema.fields);
   attachArtifactAnswerIfNeeded(session, field, data.value);
   const answer = createAnswer(field.id, data.value, source);
@@ -348,7 +351,9 @@ function validateAnswer(field: FormField, value: AnswerValue, answers: SessionAn
     throw publicError('INVALID_INPUT', 'This field is required.', 400, field.id);
   }
   if (field.type === 'email') {
-    z.string().email().parse(value);
+    if (typeof value !== 'string' || !z.string().email().safeParse(value).success) {
+      throw publicError('INVALID_INPUT', 'Please enter a valid email address.', 400, field.id);
+    }
   }
   if (field.type === 'date') {
     if (typeof value !== 'string' || !z.string().date().safeParse(value).success) {
