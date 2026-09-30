@@ -363,7 +363,7 @@ function validateAnswer(field: FormField, value: AnswerValue, answers: SessionAn
       throw publicError('INVALID_INPUT', `Must be no more than ${field.validation.max_length} characters.`, 400, field.id);
     }
   }
-  if (field.type === 'number') {
+  if (field.type === 'number' && (field.required || value !== '')) {
     if (typeof value !== 'number') {
       throw publicError('INVALID_INPUT', 'Expected a number.', 400, field.id);
     }
@@ -374,7 +374,7 @@ function validateAnswer(field: FormField, value: AnswerValue, answers: SessionAn
       throw publicError('INVALID_INPUT', `Must be no more than ${field.validation.max}.`, 400, field.id);
     }
   }
-  if (field.type === 'rating') {
+  if (field.type === 'rating' && (field.required || value !== '')) {
     if (typeof value !== 'number') {
       throw publicError('INVALID_INPUT', 'Expected a number.', 400, field.id);
     }

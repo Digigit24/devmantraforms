@@ -110,7 +110,7 @@ export default function PublicFormRunner({ form }: Props) {
   }
 
   async function buildAnswerValue(fieldType: string, fieldId: string): Promise<AnswerValue> {
-    if (fieldType === 'number' || fieldType === 'rating') return Number(value);
+    if (fieldType === 'number' || fieldType === 'rating') return value === '' ? '' : Number(value);
     if (fieldType === 'consent') return value === 'true';
     if (fieldType === 'multi_select') return multiValue;
     if (fieldType === 'file_upload' || fieldType === 'video_response') {

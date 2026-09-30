@@ -422,6 +422,41 @@ describe('submitAnswer: valid answers', () => {
     expect(getSession(first.session_id).answers[0]?.value).toBe(3.5);
   });
 
+  it('accepts an empty answer for a non-required number field even with a positive min', () => {
+    const form = createPublishedForm({
+      title: 'Optional Bounded Number',
+      fields: [{ id: 'score', type: 'number', label: 'Score', required: false, validation: { min: 1, max: 10 } }],
+    });
+    const first = startSession(form.id);
+    submitAnswer(first.session_id, { field_id: 'score', value: '' });
+    expect(getSession(first.session_id).answers[0]?.value).toBe('');
+  });
+
+  it('accepts an empty answer for a non-required rating field even with a positive min', () => {
+    const form = createPublishedForm({
+      title: 'Optional Bounded Rating',
+      fields: [{ id: 'satisfaction', type: 'rating', label: 'How satisfied are you?', required: false, validation: { min: 1, max: 5 } }],
+    });
+    const first = startSession(form.id);
+    submitAnswer(first.session_id, { field_id: 'satisfaction', value: '' });
+    expect(getSession(first.session_id).answers[0]?.value).toBe('');
+  });
+
+  it('still rejects an empty answer for a required number or rating field', () => {
+    const form = createPublishedForm({
+      title: 'Required Bounded Fields',
+      fields: [
+        { id: 'score', type: 'number', label: 'Score', required: true, validation: { min: 1, max: 10 } },
+        { id: 'satisfaction', type: 'rating', label: 'Satisfaction', required: true, validation: { min: 1, max: 5 } },
+      ],
+    });
+    const first = startSession(form.id);
+    expectPublicError(() => submitAnswer(first.session_id, { field_id: 'score', value: '' }), 'INVALID_INPUT', 400);
+
+    const second = startSession(form.id);
+    expectPublicError(() => submitAnswer(second.session_id, { field_id: 'satisfaction', value: '' }), 'INVALID_INPUT', 400);
+  });
+
   it('accepts a valid YYYY-MM-DD date', () => {
     const form = createPublishedForm({
       title: 'Date Form',
