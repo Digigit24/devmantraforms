@@ -22,7 +22,20 @@ export function middleware(request: NextRequest) {
     );
   }
 
-  const loginUrl = new URL('/login', request.url);
+  // Never derive the redirect's origin from request.url — behind a reverse proxy (Nginx)
+  // that's the internal origin this process is actually bound to (e.g.
+  // http://localhost:4015), not the public-facing host. NEXT_PUBLIC_SITE_URL is the only
+  // source of truth for the public origin here; a localhost fallback would silently send
+  // real browsers to an unreachable address instead of surfacing the misconfiguration, so
+  // a missing value fails loudly instead.
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+  if (!siteUrl) {
+    return NextResponse.json(
+      { error: { code: 'PROVIDER_UNAVAILABLE', message: 'NEXT_PUBLIC_SITE_URL is not configured.' } },
+      { status: 500 },
+    );
+  }
+  const loginUrl = new URL('/login', siteUrl);
   loginUrl.searchParams.set('from', request.nextUrl.pathname + request.nextUrl.search);
   return NextResponse.redirect(loginUrl);
 }
