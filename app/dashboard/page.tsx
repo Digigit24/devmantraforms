@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import Logo from '@/components/ui/Logo';
+import SignOutLink from '@/components/auth/SignOutLink';
 import { listForms, listSubmissions, listTenants, resolveAdminTenant } from '@/lib/agentic-forms/runtime';
 
 export const metadata = {
@@ -116,6 +117,7 @@ function Header({ tenants, currentSlug }: { tenants: { slug: string; name: strin
             <Link href={`/forms?tenant=${currentSlug}`} className="rounded-md px-3 py-2 text-slate-600 hover:bg-slate-100">Forms</Link>
             <Link href="/settings/mcp" className="rounded-md px-3 py-2 text-slate-600 hover:bg-slate-100">MCP</Link>
             <Link href="/settings/storage" className="rounded-md px-3 py-2 text-slate-600 hover:bg-slate-100">Storage</Link>
+            <SignOutLink />
           </nav>
         </div>
       </div>
