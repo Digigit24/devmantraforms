@@ -13,17 +13,12 @@ export default async function LoginPage({ searchParams }: PageProps) {
   const { from } = await searchParams;
   return (
     <main className="flex min-h-screen bg-[#f6f7fb] text-slate-950">
-      {/* Left: marketing panel. Hidden below md — the login card alone is the mobile experience. */}
+      {/* Left: minimal brand panel. Hidden below md — the login card alone is the mobile experience. */}
       <div className="hidden w-1/2 flex-col justify-center px-16 lg:px-24 md:flex">
         <Logo width={160} />
-        <h1 className="mt-10 font-heading text-4xl font-black leading-tight text-slate-950">
-          Build smarter forms with AI.
-        </h1>
-        <p className="mt-4 max-w-md text-base leading-7 text-slate-600">
-          Create, publish and manage intelligent forms and async interviews from one workspace.
+        <p className="mt-4 max-w-sm text-base leading-7 text-slate-600">
+          Form and interview management for teams and client workspaces.
         </p>
-
-        <FormPreviewCard />
       </div>
 
       {/* Right: login card. Full width on mobile, half width on md+. */}
@@ -37,25 +32,5 @@ export default async function LoginPage({ searchParams }: PageProps) {
         </p>
       </div>
     </main>
-  );
-}
-
-function FormPreviewCard() {
-  return (
-    <div className="mt-12 w-full max-w-sm rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-      <div className="flex items-center gap-2">
-        <span className="h-2.5 w-2.5 rounded-full bg-brand-blue" />
-        <span className="h-2 w-24 rounded-full bg-slate-200" />
-      </div>
-      <div className="mt-5 space-y-3">
-        <div className="h-2.5 w-3/4 rounded-full bg-slate-100" />
-        <div className="h-9 rounded-lg border border-slate-200 bg-slate-50" />
-      </div>
-      <div className="mt-4 space-y-3">
-        <div className="h-2.5 w-1/2 rounded-full bg-slate-100" />
-        <div className="h-9 rounded-lg border border-slate-200 bg-slate-50" />
-      </div>
-      <div className="mt-5 h-9 w-28 rounded-lg bg-brand-blue" />
-    </div>
   );
 }

@@ -55,7 +55,7 @@ export default function LoginForm({ from }: Props) {
   return (
     <div className="w-full max-w-sm rounded-xl border border-slate-200 bg-white p-8 shadow-md">
       <h2 className="font-heading text-2xl font-black text-slate-950">Welcome back</h2>
-      <p className="mt-1.5 text-sm text-slate-600">Sign in to continue to your workspace.</p>
+      <p className="mt-1.5 text-sm text-slate-600">Sign in to manage forms, interviews and responses.</p>
 
       <form className="mt-6 space-y-4" onSubmit={handleSubmit} noValidate>
         {error && (

@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import Logo from '@/components/ui/Logo';
+import SignOutLink from '@/components/auth/SignOutLink';
 
 export const metadata = {
   title: 'Storage Settings',
@@ -21,7 +22,10 @@ export default function StorageSettingsPage() {
       <header className="border-b border-slate-200 bg-white">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4">
           <Logo width={160} />
-          <Link href="/dashboard" className="rounded-md border border-slate-300 px-4 py-2 text-sm font-semibold">Dashboard</Link>
+          <div className="flex items-center gap-2">
+            <Link href="/dashboard" className="rounded-md border border-slate-300 px-4 py-2 text-sm font-semibold">Dashboard</Link>
+            <SignOutLink />
+          </div>
         </div>
       </header>
 

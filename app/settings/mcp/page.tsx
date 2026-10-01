@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import Logo from '@/components/ui/Logo';
+import SignOutLink from '@/components/auth/SignOutLink';
 import { listApiKeysForTenant } from '@/lib/agentic-forms/auth';
 import { listTenants } from '@/lib/agentic-forms/runtime';
 
@@ -86,7 +87,10 @@ function Header() {
     <header className="border-b border-slate-200 bg-white">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4">
         <Logo width={160} />
-        <Link href="/dashboard" className="rounded-md border border-slate-300 px-4 py-2 text-sm font-semibold">Dashboard</Link>
+        <div className="flex items-center gap-2">
+          <Link href="/dashboard" className="rounded-md border border-slate-300 px-4 py-2 text-sm font-semibold">Dashboard</Link>
+          <SignOutLink />
+        </div>
       </div>
     </header>
   );
