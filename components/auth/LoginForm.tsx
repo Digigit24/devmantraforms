@@ -53,11 +53,11 @@ export default function LoginForm({ from }: Props) {
   }
 
   return (
-    <div className="w-full max-w-sm rounded-2xl border border-slate-200/80 bg-white p-8 shadow-2xl shadow-slate-900/10">
-      <h2 className="font-heading text-2xl font-black text-slate-950">Welcome back</h2>
-      <p className="mt-1.5 text-sm text-slate-600">Sign in to access your workspace.</p>
+    <div className="w-full">
+      <h2 className="font-heading text-3xl font-black text-slate-950">Welcome back</h2>
+      <p className="mt-2 text-sm text-slate-600">Sign in to access your workspace.</p>
 
-      <form className="mt-6 space-y-4" onSubmit={handleSubmit} noValidate>
+      <form className="mt-8 space-y-5" onSubmit={handleSubmit} noValidate>
         {error && (
           <div role="alert" className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
             {error}
