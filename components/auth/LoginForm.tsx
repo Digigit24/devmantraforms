@@ -53,7 +53,7 @@ export default function LoginForm({ from }: Props) {
   }
 
   return (
-    <div className="w-full max-w-sm rounded-xl border border-slate-200 bg-white p-8 shadow-md">
+    <div className="w-full max-w-sm rounded-2xl border border-slate-200/80 bg-white p-8 shadow-2xl shadow-slate-900/10">
       <h2 className="font-heading text-2xl font-black text-slate-950">Welcome back</h2>
       <p className="mt-1.5 text-sm text-slate-600">Sign in to manage forms, interviews and responses.</p>
 
